@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeSignal Pattern Practice</title>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=DM+Sans:wght@400;500;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --border: #2a2d3a;
+  --text: #e0e0e6;
+  --dim: #8888a0;
+  --accent: #6c8cff;
+  --green: #4ade80;
+  --red: #f87171;
+  --yellow: #fbbf24;
+  --editor-bg: #141620;
+}
+
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+.app { max-width: 960px; margin: 0 auto; padding: 20px; }
+
+header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 0; border-bottom: 1px solid var(--border); margin-bottom: 24px;
+}
+header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+header .subtitle { color: var(--dim); font-size: 13px; }
+
+.nav {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.nav button {
+  background: var(--surface); border: 1px solid var(--border); color: var(--dim);
+  padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+}
+.nav button:hover { border-color: var(--accent); color: var(--text); }
+.nav button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.nav button.passed { border-color: var(--green); color: var(--green); }
+.nav button.passed.active { background: var(--green); color: #000; }
+
+.exercise { margin-bottom: 24px; }
+.exercise h2 { font-size: 16px; font-weight: 700; margin-bottom: 4px; color: var(--accent); }
+.exercise .pattern-tag { font-size: 11px; color: var(--dim); margin-bottom: 12px; }
+.exercise .desc { font-size: 14px; line-height: 1.6; color: var(--text); margin-bottom: 16px; }
+.exercise .desc code { background: var(--surface); padding: 2px 6px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+.spec { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 16px; font-size: 13px; line-height: 1.7; }
+.spec .method { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); font-weight: 700; }
+.spec .returns { color: var(--dim); font-style: italic; }
+
+.editor-container { position: relative; margin-bottom: 12px; }
+textarea.editor {
+  width: 100%; min-height: 320px; background: var(--editor-bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: 8px; padding: 16px;
+  font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6;
+  resize: vertical; tab-size: 4; outline: none;
+}
+textarea.editor:focus { border-color: var(--accent); }
+
+.controls { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; }
+.run-btn {
+  background: var(--accent); color: #fff; border: none; padding: 10px 28px;
+  border-radius: 6px; font-size: 14px; font-weight: 700; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+}
+.run-btn:hover { filter: brightness(1.15); }
+.run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.status { font-size: 13px; color: var(--dim); }
+.status.pass { color: var(--green); font-weight: 700; }
+.status.fail { color: var(--red); font-weight: 700; }
+
+.output {
+  background: var(--editor-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 14px; font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  line-height: 1.6; max-height: 240px; overflow-y: auto; white-space: pre-wrap;
+}
+.output .pass-line { color: var(--green); }
+.output .fail-line { color: var(--red); }
+.output .info-line { color: var(--dim); }
+
+.loading {
+  display: flex; align-items: center; justify-content: center;
+  height: 60vh; flex-direction: column; gap: 16px;
+}
+.loading .spinner {
+  width: 32px; height: 32px; border: 3px solid var(--border);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.hint-btn {
+  background: none; border: 1px solid var(--border); color: var(--dim);
+  padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+}
+.hint-btn:hover { color: var(--yellow); border-color: var(--yellow); }
+.hint { background: var(--surface); border: 1px solid var(--yellow); border-radius: 8px; padding: 12px; font-size: 13px; color: var(--yellow); margin-top: 10px; line-height: 1.6; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+.card h3 { font-size: 13px; color: var(--accent); margin-bottom: 8px; }
+.card pre { font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.6; color: var(--text); }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="loading">
+    <div class="spinner"></div>
+    <div>Loading Python runtime...</div>
+  </div>
+</div>
+
+<script>
+let pyodide = null;
+let exercises = [];
+let currentEx = 0;
+let passedSet = new Set();
+
+function defineExercises() {
+  exercises = [
+    // PATTERN 1: The Store
+    {
+      title: "1. The Store — ContactBook",
+      pattern: "Pattern 1: dict, set/get/delete",
+      desc: "Build a <code>ContactBook</code> with three methods. Store phone numbers by name.",
+      spec: `<div class="method">add_contact(name, phone) → "OK"</div>
+<div class="method">get_phone(name) → phone or None</div>
+<div class="method">remove_contact(name) → True or False</div>`,
+      starter: `class ContactBook:
+    def __init__(self):
+        pass  # your code here
+
+    def add_contact(self, name, phone):
+        pass
+
+    def get_phone(self, name):
+        pass
+
+    def remove_contact(self, name):
+        pass`,
+      tests: `book = ContactBook()
+assert book.add_contact("Christina", "313-555-0100") == "OK", "add_contact should return OK"
+assert book.add_contact("Alice", "734-555-0200") == "OK", "add second contact"
+assert book.get_phone("Christina") == "313-555-0100", "get_phone should return number"
+assert book.get_phone("Nobody") is None, "missing contact should return None"
+assert book.remove_contact("Alice") == True, "remove existing should return True"
+assert book.remove_contact("Alice") == False, "remove again should return False"
+assert book.get_phone("Alice") is None, "removed contact should return None"`,
+      hint: `self.data = {}\nself.data[name] = phone\nif name in self.data: ...`
+    },
+    // PATTERN 1 variation
+    {
+      title: "2. The Store — Pantry",
+      pattern: "Pattern 1: same skeleton, different values",
+      desc: "Build a <code>Pantry</code>. Store quantities by item name.",
+      spec: `<div class="method">add_item(item, quantity) → "OK"</div>
+<div class="method">check(item) → quantity or None</div>
+<div class="method">use_up(item) → True or False</div>`,
+      starter: `class Pantry:
+    def __init__(self):
+        pass
+
+    def add_item(self, item, quantity):
+        pass
+
+    def check(self, item):
+        pass
+
+    def use_up(self, item):
+        pass`,
+      tests: `p = Pantry()
+assert p.add_item("rice", 3) == "OK"
+assert p.add_item("tomatoes", 12) == "OK"
+assert p.check("rice") == 3
+assert p.check("beer") is None
+assert p.use_up("tomatoes") == True
+assert p.use_up("tomatoes") == False`,
+      hint: `Same exact skeleton as ContactBook.\nself.data[item] = quantity`
+    },
+    // PATTERN 2: Prefix Filter
+    {
+      title: "3. Prefix Filter — MusicLibrary",
+      pattern: "Pattern 2: filter keys by startswith",
+      desc: "Build a <code>MusicLibrary</code> with Pattern 1 methods plus a prefix search on titles.",
+      spec: `<div class="method">add_song(title, artist) → "OK"</div>
+<div class="method">get_artist(title) → artist or None</div>
+<div class="method">remove_song(title) → True or False</div>
+<div class="method">songs_starting_with(prefix) → sorted list</div>`,
+      starter: `class MusicLibrary:
+    def __init__(self):
+        pass
+
+    def add_song(self, title, artist):
+        pass
+
+    def get_artist(self, title):
+        pass
+
+    def remove_song(self, title):
+        pass
+
+    def songs_starting_with(self, prefix):
+        pass`,
+      tests: `m = MusicLibrary()
+m.add_song("Madvillainy", "MF DOOM")
+m.add_song("MM..FOOD", "MF DOOM")
+m.add_song("Meat Grinder", "MF DOOM")
+m.add_song("Born Like This", "MF DOOM")
+assert m.get_artist("Madvillainy") == "MF DOOM"
+assert m.songs_starting_with("M") == ["MM..FOOD", "Madvillainy", "Meat Grinder"]
+assert m.songs_starting_with("B") == ["Born Like This"]
+assert m.songs_starting_with("Z") == []
+m.remove_song("MM..FOOD")
+assert m.songs_starting_with("M") == ["Madvillainy", "Meat Grinder"]`,
+      hint: `results = []\nfor key in self.data:\n    if key.startswith(prefix):\n        results.append(key)\nreturn sorted(results)`
+    },
+    // PATTERN 3: Value Filter
+    {
+      title: "4. Value Filter — ClassRoster",
+      pattern: "Pattern 3: filter by stored value",
+      desc: "Build a <code>ClassRoster</code> with Pattern 1, Pattern 2 (prefix on names), and Pattern 3 (filter by grade).",
+      spec: `<div class="method">add_student(name, grade) → "OK"</div>
+<div class="method">get_grade(name) → grade or None</div>
+<div class="method">remove_student(name) → True or False</div>
+<div class="method">names_starting_with(prefix) → sorted list</div>
+<div class="method">students_in_grade(grade) → sorted list</div>`,
+      starter: `class ClassRoster:
+    def __init__(self):
+        pass
+
+    def add_student(self, name, grade):
+        pass
+
+    def get_grade(self, name):
+        pass
+
+    def remove_student(self, name):
+        pass
+
+    def names_starting_with(self, prefix):
+        pass
+
+    def students_in_grade(self, grade):
+        pass`,
+      tests: `r = ClassRoster()
+r.add_student("Jaylen", 10)
+r.add_student("Maria", 10)
+r.add_student("Marcus", 11)
+r.add_student("Destiny", 10)
+assert r.get_grade("Jaylen") == 10
+assert r.students_in_grade(10) == ["Destiny", "Jaylen", "Maria"]
+assert r.students_in_grade(11) == ["Marcus"]
+assert r.students_in_grade(12) == []
+assert r.names_starting_with("Ma") == ["Marcus", "Maria"]
+r.remove_student("Maria")
+assert r.students_in_grade(10) == ["Destiny", "Jaylen"]`,
+      hint: `Pattern 3 is like Pattern 2 but checks the VALUE:\nif self.data[key] == target:\n    results.append(key)`
+    },
+    // PATTERN 4: Structured Value
+    {
+      title: "5. Structured Value — FoodLog",
+      pattern: "Pattern 4: dict inside a dict",
+      desc: "Build a <code>FoodLog</code> that stores both calories and timestamp for each meal. Filter meals logged after a given time.",
+      spec: `<div class="method">log_meal(meal, calories, timestamp) → "OK"</div>
+<div class="method">get_calories(meal) → calories or None</div>
+<div class="method">remove_meal(meal) → True or False</div>
+<div class="method">meals_starting_with(prefix) → sorted list</div>
+<div class="method">meals_logged_after(timestamp) → sorted list</div>`,
+      starter: `class FoodLog:
+    def __init__(self):
+        pass
+
+    def log_meal(self, meal, calories, timestamp):
+        pass
+
+    def get_calories(self, meal):
+        pass
+
+    def remove_meal(self, meal):
+        pass
+
+    def meals_starting_with(self, prefix):
+        pass
+
+    def meals_logged_after(self, timestamp):
+        pass`,
+      tests: `f = FoodLog()
+f.log_meal("tikka masala", 650, 100)
+f.log_meal("rice", 200, 150)
+f.log_meal("naan", 300, 150)
+f.log_meal("dairy queen", 900, 300)
+assert f.get_calories("tikka masala") == 650
+assert f.get_calories("salad") is None
+assert f.meals_starting_with("n") == ["naan"]
+assert f.meals_logged_after(140) == ["dairy queen", "naan", "rice"]
+assert f.meals_logged_after(200) == ["dairy queen"]
+f.remove_meal("rice")
+assert f.meals_logged_after(140) == ["dairy queen", "naan"]`,
+      hint: `self.data[meal] = {"calories": calories, "timestamp": timestamp}\nAccess with: self.data[meal]["calories"]\nFilter with: if self.data[meal]["timestamp"] > timestamp:`
+    },
+    // PATTERN 4: Level 1 full problem
+    {
+      title: "6. Level 1 — TicketSystem",
+      pattern: "Pattern 1 + 4: structured value with status changes",
+      desc: "Build a <code>TicketSystem</code>. Tickets have title, priority, and status. Status starts as <code>\"open\"</code>.",
+      spec: `<div class="method">create_ticket(ticket_id, title, priority) → "created" or "exists"</div>
+<div class="method">close_ticket(ticket_id) → "closed" or "already_closed" or None</div>
+<div class="method">get_ticket(ticket_id) → dict or None</div>
+<div class="method">delete_ticket(ticket_id) → True or False</div>`,
+      starter: `class TicketSystem:
+    def __init__(self):
+        pass
+
+    def create_ticket(self, ticket_id, title, priority):
+        pass
+
+    def close_ticket(self, ticket_id):
+        pass
+
+    def get_ticket(self, ticket_id):
+        pass
+
+    def delete_ticket(self, ticket_id):
+        pass`,
+      tests: `ts = TicketSystem()
+assert ts.create_ticket("t1", "Fix login bug", 3) == "created"
+assert ts.create_ticket("t2", "Update docs", 1) == "created"
+assert ts.create_ticket("t1", "Duplicate", 5) == "exists"
+assert ts.get_ticket("t1") == {"title": "Fix login bug", "priority": 3, "status": "open"}
+assert ts.get_ticket("t99") is None
+assert ts.close_ticket("t1") == "closed"
+assert ts.close_ticket("t1") == "already_closed"
+assert ts.close_ticket("t99") is None
+assert ts.get_ticket("t1")["status"] == "closed"
+assert ts.delete_ticket("t2") == True
+assert ts.delete_ticket("t2") == False`,
+      hint: `self.data[ticket_id] = {"title": title, "priority": priority, "status": "open"}\nclose_ticket changes: self.data[ticket_id]["status"] = "closed"\nget_ticket returns: self.data[ticket_id] (the whole dict)`
+    },
+    // Level 1+2 full
+    {
+      title: "7. Level 1+2 — AccountLedger",
+      pattern: "All patterns: CRUD + filters + structured value",
+      desc: "Build an <code>AccountLedger</code> with account creation, deposit, withdraw, and three Level 2 queries.",
+      spec: `<div class="method">create_account(account_id, owner) → "created" or "exists"</div>
+<div class="method">deposit(account_id, amount) → new balance or None</div>
+<div class="method">withdraw(account_id, amount) → new balance or "insufficient" or None</div>
+<div class="method">get_balance(account_id) → balance or None</div>
+<div class="method">accounts_by_owner(owner) → sorted list</div>
+<div class="method">accounts_above(threshold) → sorted list</div>`,
+      starter: `class AccountLedger:
+    def __init__(self):
+        pass
+
+    def create_account(self, account_id, owner):
+        pass
+
+    def deposit(self, account_id, amount):
+        pass
+
+    def withdraw(self, account_id, amount):
+        pass
+
+    def get_balance(self, account_id):
+        pass
+
+    def accounts_by_owner(self, owner):
+        pass
+
+    def accounts_above(self, threshold):
+        pass`,
+      tests: `ledger = AccountLedger()
+assert ledger.create_account("a1", "Sharks") == "created"
+assert ledger.create_account("a2", "Sharks") == "created"
+assert ledger.create_account("a3", "Feist") == "created"
+assert ledger.create_account("a1", "Sharks") == "exists"
+assert ledger.deposit("a1", 1000) == 1000
+assert ledger.deposit("a2", 500) == 500
+assert ledger.deposit("a3", 2000) == 2000
+assert ledger.deposit("a99", 100) is None
+assert ledger.get_balance("a1") == 1000
+assert ledger.withdraw("a1", 300) == 700
+assert ledger.withdraw("a1", 5000) == "insufficient"
+assert ledger.get_balance("a1") == 700
+assert ledger.withdraw("a99", 50) is None
+assert ledger.accounts_by_owner("Sharks") == ["a1", "a2"]
+assert ledger.accounts_by_owner("Nobody") == []
+assert ledger.accounts_above(600) == ["a1", "a3"]
+assert ledger.accounts_above(5000) == []`,
+      hint: `self.data[account_id] = {"owner": owner, "balance": 0}\ndeposit: self.data[account_id]["balance"] += amount\nwithdraw: check balance < amount first\naccounts_by_owner: if self.data[aid]["owner"] == owner\naccounts_above: if self.data[aid]["balance"] > threshold`
+    },
+    // PATTERN 5: Snapshot
+    {
+      title: "8. Level 4 — Backup & Restore",
+      pattern: "Pattern 5: import copy; copy.deepcopy",
+      desc: "Add backup and restore to a simple store. This is the entire Level 4 pattern.",
+      spec: `<div class="method">set(key, value) → "OK"</div>
+<div class="method">get(key) → value or None</div>
+<div class="method">delete(key) → True or False</div>
+<div class="method">backup(backup_id) → "backed_up"</div>
+<div class="method">restore(backup_id) → "restored" or None</div>`,
+      starter: `import copy
+
+class DataStore:
+    def __init__(self):
+        pass
+
+    def set(self, key, value):
+        pass
+
+    def get(self, key):
+        pass
+
+    def delete(self, key):
+        pass
+
+    def backup(self, backup_id):
+        pass
+
+    def restore(self, backup_id):
+        pass`,
+      tests: `store = DataStore()
+store.set("name", "Sharks")
+store.set("year", "2026")
+assert store.get("name") == "Sharks"
+assert store.get("missing") is None
+store.backup("save_1")
+store.set("name", "Feist")
+store.delete("year")
+assert store.get("name") == "Feist"
+assert store.get("year") is None
+store.restore("save_1")
+assert store.get("name") == "Sharks"
+assert store.get("year") == "2026"
+assert store.restore("save_99") is None
+store.backup("save_2")
+store.set("name", "Sigil")
+store.restore("save_2")
+assert store.get("name") == "Sharks"`,
+      hint: `self.data = {}\nself.backups = {}\nbackup: self.backups[backup_id] = copy.deepcopy(self.data)\nrestore: self.data = copy.deepcopy(self.backups[backup_id])`
+    }
+  ];
+}
+
+function render() {
+  const ex = exercises[currentEx];
+  const app = document.getElementById('app');
+
+  let navHtml = exercises.map((e, i) => {
+    let cls = i === currentEx ? 'active' : '';
+    if (passedSet.has(i)) cls += ' passed';
+    return `<button class="${cls}" onclick="goTo(${i})">${i + 1}</button>`;
+  }).join('');
+
+  app.innerHTML = `
+    <header>
+      <div>
+        <h1>CodeSignal Pattern Practice</h1>
+        <div class="subtitle">Five patterns. One card. That's the whole test.</div>
+      </div>
+      <div class="subtitle">${passedSet.size}/${exercises.length} passed</div>
+    </header>
+
+    <div class="nav">${navHtml}</div>
+
+    <div class="exercise">
+      <h2>${ex.title}</h2>
+      <div class="pattern-tag">${ex.pattern}</div>
+      <div class="desc">${ex.desc}</div>
+      <div class="spec">${ex.spec}</div>
+    </div>
+
+    <div class="editor-container">
+      <textarea class="editor" id="code" spellcheck="false">${ex.starter}</textarea>
+    </div>
+
+    <div class="controls">
+      <button class="run-btn" id="runBtn" onclick="runCode()">▶ Run Tests</button>
+      <span class="status" id="status"></span>
+      <button class="hint-btn" onclick="toggleHint()">💡 Hint</button>
+    </div>
+    <div id="hintArea"></div>
+    <div class="output" id="output" style="display:none;"></div>
+
+    <div class="card" style="margin-top: 24px;">
+      <h3>📇 Index Card</h3>
+      <pre>1. STORE:      self.data[key] = value
+2. PREFIX:     if key.startswith(prefix):
+3. VALUE:      if self.data[key]["field"] == target:
+4. STRUCTURED: self.data[key] = {"field": val, "field2": val2}
+5. SNAPSHOT:   import copy; copy.deepcopy(self.data)</pre>
+    </div>
+  `;
+
+  // Handle tab in textarea
+  const editor = document.getElementById('code');
+  editor.addEventListener('keydown', function(e) {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const start = this.selectionStart;
+      const end = this.selectionEnd;
+      this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+      this.selectionStart = this.selectionEnd = start + 4;
+    }
+  });
+}
+
+function goTo(i) {
+  currentEx = i;
+  render();
+}
+
+function toggleHint() {
+  const area = document.getElementById('hintArea');
+  if (area.innerHTML) {
+    area.innerHTML = '';
+  } else {
+    area.innerHTML = `<div class="hint"><pre>${exercises[currentEx].hint}</pre></div>`;
+  }
+}
+
+async function runCode() {
+  const btn = document.getElementById('runBtn');
+  const status = document.getElementById('status');
+  const output = document.getElementById('output');
+  const code = document.getElementById('code').value;
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Running...';
+  status.className = 'status';
+  status.textContent = '';
+  output.style.display = 'block';
+  output.innerHTML = '<span class="info-line">Running tests...</span>\n';
+
+  const testCode = exercises[currentEx].tests;
+  const fullCode = code + '\n\n' + `
+_results = []
+_lines = ${JSON.stringify(testCode)}.strip().split('\\n')
+_pass = 0
+_fail = 0
+for _line in _lines:
+    _line = _line.strip()
+    if not _line or _line.startswith('#'):
+        continue
+    try:
+        exec(_line)
+        _pass += 1
+        _results.append("PASS: " + _line[:80])
+    except AssertionError as e:
+        _fail += 1
+        _results.append("FAIL: " + _line[:80] + " — " + str(e))
+    except AssertionError as e:
+        _fail += 1
+        _results.append("FAIL: " + _line[:80] + " — " + str(e))
+    except Exception as e:
+        _fail += 1
+        _results.append("ERROR: " + _line[:80] + " — " + type(e).__name__ + ": " + str(e))
+print("RESULTS:" + str(_pass) + ":" + str(_fail))
+for r in _results:
+    print(r)
+`;
+
+  // Fix the typo in AssertionError -> AssertionError
+  const fixedCode = code + '\n\n' + `
+_results = []
+_lines = ${JSON.stringify(testCode)}.strip().split('\\n')
+_pass_count = 0
+_fail_count = 0
+for _line in _lines:
+    _line = _line.strip()
+    if not _line or _line.startswith('#'):
+        continue
+    try:
+        exec(_line)
+        _pass_count += 1
+        _results.append("PASS|" + _line[:90])
+    except AssertionError as e:
+        _fail_count += 1
+        _results.append("FAIL|" + _line[:90] + " >> " + str(e))
+    except Exception as e:
+        _fail_count += 1
+        _results.append("FAIL|" + _line[:90] + " >> " + type(e).__name__ + ": " + str(e))
+print("SUMMARY|" + str(_pass_count) + "|" + str(_fail_count))
+for r in _results:
+    print(r)
+`;
+
+  try {
+    pyodide.runPython('import sys\nfrom io import StringIO\n_stdout = StringIO()\nsys.stdout = _stdout');
+    try {
+      pyodide.runPython(fixedCode);
+    } catch(e) {
+      // Python syntax error or runtime error before tests
+      output.innerHTML = `<span class="fail-line">Error: ${e.message.split('\\n').slice(-2).join('\\n')}</span>`;
+      btn.disabled = false;
+      btn.textContent = '▶ Run Tests';
+      status.className = 'status fail';
+      status.textContent = 'Error in code';
+      return;
+    }
+    const stdout = pyodide.runPython('sys.stdout = sys.__stdout__\n_stdout.getvalue()');
+
+    let lines = stdout.trim().split('\n');
+    let html = '';
+    let allPassed = true;
+
+    for (const line of lines) {
+      if (line.startsWith('SUMMARY|')) {
+        const parts = line.split('|');
+        const p = parseInt(parts[1]);
+        const f = parseInt(parts[2]);
+        if (f > 0) allPassed = false;
+      } else if (line.startsWith('PASS|')) {
+        html += `<span class="pass-line">✓ ${line.substring(5)}</span>\n`;
+      } else if (line.startsWith('FAIL|')) {
+        allPassed = false;
+        html += `<span class="fail-line">✗ ${line.substring(5)}</span>\n`;
+      } else {
+        html += `<span class="info-line">${line}</span>\n`;
+      }
+    }
+
+    output.innerHTML = html || '<span class="info-line">No output</span>';
+
+    if (allPassed && lines.some(l => l.startsWith('PASS|'))) {
+      status.className = 'status pass';
+      status.textContent = '✓ All tests passed!';
+      passedSet.add(currentEx);
+    } else {
+      status.className = 'status fail';
+      status.textContent = '✗ Some tests failed';
+    }
+
+  } catch(e) {
+    output.innerHTML = `<span class="fail-line">${e.message}</span>`;
+    status.className = 'status fail';
+    status.textContent = 'Error';
+  }
+
+  btn.disabled = false;
+  btn.textContent = '▶ Run Tests';
+  // Update just the nav buttons for passed state
+  document.querySelectorAll('.nav button').forEach((b, i) => {
+    let cls = i === currentEx ? 'active' : '';
+    if (passedSet.has(i)) cls += ' passed';
+    b.className = cls;
+  });
+  // Update counter
+  document.querySelector('header .subtitle:last-child') || 
+    (document.querySelectorAll('header .subtitle')[0].nextElementSibling || {}).textContent;
+}
+
+async function init() {
+  defineExercises();
+  pyodide = await loadPyodide();
+  render();
+}
+
+init();
+</script>
+</body>
+</html>
