@@ -127,17 +127,20 @@ let passedSet = new Set();
 
 function defineExercises() {
   exercises = [
-    // PATTERN 1: The Store
+    // PATTERN 1: The Store — with variation
     {
       title: "1. The Store — ContactBook",
-      pattern: "Pattern 1: dict, set/get/delete",
-      desc: "Build a <code>ContactBook</code> with three methods. Store phone numbers by name.",
-      spec: `<div class="method">add_contact(name, phone) → "OK"</div>
+      pattern: "Pattern 1: dict basics + formatted return + overwrite",
+      desc: "Build a <code>ContactBook</code>. Store phone numbers by name. Note: <code>add_contact</code> returns the name (not 'OK'), <code>update</code> overwrites and returns the phone, and <code>format</code> returns both glued together.",
+      spec: `<div class="method">add_contact(name, phone) → name (return the NAME you just added)</div>
 <div class="method">get_phone(name) → phone or None</div>
-<div class="method">remove_contact(name) → True or False</div>`,
+<div class="method">update(name, phone) → new phone or None (overwrite existing)</div>
+<div class="method">remove_contact(name) → True or False</div>
+<div class="method">format(name) → "name: phone" or None</div>
+<div class="method">count() → number of contacts</div>`,
       starter: `class ContactBook:
     def __init__(self):
-        pass  # your code here
+        pass
 
     def add_contact(self, name, phone):
         pass
@@ -145,26 +148,44 @@ function defineExercises() {
     def get_phone(self, name):
         pass
 
+    def update(self, name, phone):
+        pass
+
     def remove_contact(self, name):
+        pass
+
+    def format(self, name):
+        pass
+
+    def count(self):
         pass`,
       tests: `book = ContactBook()
-assert book.add_contact("Christina", "313-555-0100") == "OK", "add_contact should return OK"
-assert book.add_contact("Alice", "734-555-0200") == "OK", "add second contact"
-assert book.get_phone("Christina") == "313-555-0100", "get_phone should return number"
-assert book.get_phone("Nobody") is None, "missing contact should return None"
-assert book.remove_contact("Alice") == True, "remove existing should return True"
-assert book.remove_contact("Alice") == False, "remove again should return False"
-assert book.get_phone("Alice") is None, "removed contact should return None"`,
-      hint: `self.data = {}\nself.data[name] = phone\nif name in self.data: ...`
+assert book.add_contact("Christina", "313-555-0100") == "Christina"
+assert book.add_contact("Alice", "734-555-0200") == "Alice"
+assert book.get_phone("Christina") == "313-555-0100"
+assert book.get_phone("Nobody") is None
+assert book.count() == 2
+assert book.format("Christina") == "Christina: 313-555-0100"
+assert book.format("Nobody") is None
+assert book.update("Christina", "313-555-9999") == "313-555-9999"
+assert book.get_phone("Christina") == "313-555-9999"
+assert book.update("Ghost", "000-000-0000") is None
+assert book.remove_contact("Alice") == True
+assert book.remove_contact("Alice") == False
+assert book.count() == 1`,
+      hint: `self.data[name] = phone\nadd_contact returns: name (the argument, NOT self.data[name])\nget_phone returns: self.data[name] (the VALUE inside)\nupdate: check exists first, then overwrite, return self.data[name]\nformat: name + ": " + self.data[name] (glue KEY + VALUE)\ncount: len(self.data)`
     },
-    // PATTERN 1 variation
+    // PATTERN 1 variation — arithmetic on values
     {
-      title: "2. The Store — Pantry",
-      pattern: "Pattern 1: same skeleton, different values",
-      desc: "Build a <code>Pantry</code>. Store quantities by item name.",
-      spec: `<div class="method">add_item(item, quantity) → "OK"</div>
+      title: "2. The Store + Math — Pantry",
+      pattern: "Pattern 1 + arithmetic: add to and subtract from stored values",
+      desc: "Build a <code>Pantry</code>. Store quantities by item name. <code>consume</code> subtracts (but not below 0). <code>restock</code> adds. Both return the new quantity.",
+      spec: `<div class="method">add_item(item, quantity) → item (return the ITEM name)</div>
 <div class="method">check(item) → quantity or None</div>
-<div class="method">use_up(item) → True or False</div>`,
+<div class="method">consume(item, amount) → new quantity or "empty" or None</div>
+<div class="method">restock(item, amount) → new quantity or None</div>
+<div class="method">use_up(item) → True or False (delete entirely)</div>
+<div class="method">low_stock(threshold) → sorted list of items with quantity &lt;= threshold</div>`,
       starter: `class Pantry:
     def __init__(self):
         pass
@@ -175,26 +196,46 @@ assert book.get_phone("Alice") is None, "removed contact should return None"`,
     def check(self, item):
         pass
 
+    def consume(self, item, amount):
+        pass
+
+    def restock(self, item, amount):
+        pass
+
     def use_up(self, item):
+        pass
+
+    def low_stock(self, threshold):
         pass`,
       tests: `p = Pantry()
-assert p.add_item("rice", 3) == "OK"
-assert p.add_item("tomatoes", 12) == "OK"
-assert p.check("rice") == 3
+assert p.add_item("rice", 10) == "rice"
+assert p.add_item("tomatoes", 3) == "tomatoes"
+assert p.add_item("oil", 1) == "oil"
+assert p.check("rice") == 10
 assert p.check("beer") is None
-assert p.use_up("tomatoes") == True
-assert p.use_up("tomatoes") == False`,
-      hint: `Same exact skeleton as ContactBook.\nself.data[item] = quantity`
+assert p.consume("rice", 4) == 6
+assert p.consume("rice", 20) == "empty"
+assert p.check("rice") == 6
+assert p.consume("ghost", 1) is None
+assert p.restock("tomatoes", 5) == 8
+assert p.restock("ghost", 5) is None
+assert p.low_stock(5) == ["oil", "tomatoes"]
+assert p.use_up("oil") == True
+assert p.use_up("oil") == False
+assert p.low_stock(5) == ["tomatoes"]`,
+      hint: `self.data[item] = quantity\nconsume: check exists, then check self.data[item] < amount → "empty", else subtract\nrestock: self.data[item] += amount, return self.data[item]\nlow_stock: for item in self.data: if self.data[item] <= threshold`
     },
-    // PATTERN 2: Prefix Filter
+    // PATTERN 2: Prefix Filter — with value filter and formatting
     {
-      title: "3. Prefix Filter — MusicLibrary",
-      pattern: "Pattern 2: filter keys by startswith",
-      desc: "Build a <code>MusicLibrary</code> with Pattern 1 methods plus a prefix search on titles.",
-      spec: `<div class="method">add_song(title, artist) → "OK"</div>
+      title: "3. Prefix + Value Filter — MusicLibrary",
+      pattern: "Pattern 2+3: filter keys by prefix AND filter by value",
+      desc: "Build a <code>MusicLibrary</code>. Filter songs by title prefix AND by artist name. <code>catalog</code> returns formatted strings.",
+      spec: `<div class="method">add_song(title, artist) → "title by artist" (formatted return)</div>
 <div class="method">get_artist(title) → artist or None</div>
 <div class="method">remove_song(title) → True or False</div>
-<div class="method">songs_starting_with(prefix) → sorted list</div>`,
+<div class="method">songs_starting_with(prefix) → sorted list of titles</div>
+<div class="method">songs_by_artist(artist) → sorted list of titles</div>
+<div class="method">catalog() → sorted list of "title — artist" strings</div>`,
       starter: `class MusicLibrary:
     def __init__(self):
         pass
@@ -209,61 +250,85 @@ assert p.use_up("tomatoes") == False`,
         pass
 
     def songs_starting_with(self, prefix):
+        pass
+
+    def songs_by_artist(self, artist):
+        pass
+
+    def catalog(self):
         pass`,
       tests: `m = MusicLibrary()
-m.add_song("Madvillainy", "MF DOOM")
-m.add_song("MM..FOOD", "MF DOOM")
-m.add_song("Meat Grinder", "MF DOOM")
-m.add_song("Born Like This", "MF DOOM")
+assert m.add_song("Madvillainy", "MF DOOM") == "Madvillainy by MF DOOM"
+assert m.add_song("MM..FOOD", "MF DOOM") == "MM..FOOD by MF DOOM"
+assert m.add_song("Born Like This", "MF DOOM") == "Born Like This by MF DOOM"
+assert m.add_song("Blonde", "Frank Ocean") == "Blonde by Frank Ocean"
 assert m.get_artist("Madvillainy") == "MF DOOM"
-assert m.songs_starting_with("M") == ["MM..FOOD", "Madvillainy", "Meat Grinder"]
-assert m.songs_starting_with("B") == ["Born Like This"]
+assert m.get_artist("Missing") is None
+assert m.songs_starting_with("M") == ["MM..FOOD", "Madvillainy"]
 assert m.songs_starting_with("Z") == []
+assert m.songs_by_artist("MF DOOM") == ["Born Like This", "MM..FOOD", "Madvillainy"]
+assert m.songs_by_artist("Frank Ocean") == ["Blonde"]
+assert m.songs_by_artist("Nobody") == []
+assert m.catalog() == ["Blonde — Frank Ocean", "Born Like This — MF DOOM", "MM..FOOD — MF DOOM", "Madvillainy — MF DOOM"]
 m.remove_song("MM..FOOD")
-assert m.songs_starting_with("M") == ["Madvillainy", "Meat Grinder"]`,
-      hint: `results = []\nfor key in self.data:\n    if key.startswith(prefix):\n        results.append(key)\nreturn sorted(results)`
+assert m.songs_by_artist("MF DOOM") == ["Born Like This", "Madvillainy"]`,
+      hint: `add_song returns: title + " by " + artist (glue TWO ARGUMENTS)\nsongs_starting_with: if title.startswith(prefix) → Pattern 2 (filter KEY)\nsongs_by_artist: if self.data[title] == artist → Pattern 3 (filter VALUE)\ncatalog: for title in self.data: title + " — " + self.data[title] (KEY + VALUE)`
     },
-    // PATTERN 3: Value Filter
+    // PATTERN 3+4: Value Filter with structured value
     {
-      title: "4. Value Filter — ClassRoster",
-      pattern: "Pattern 3: filter by stored value",
-      desc: "Build a <code>ClassRoster</code> with Pattern 1, Pattern 2 (prefix on names), and Pattern 3 (filter by grade).",
-      spec: `<div class="method">add_student(name, grade) → "OK"</div>
-<div class="method">get_grade(name) → grade or None</div>
-<div class="method">remove_student(name) → True or False</div>
-<div class="method">names_starting_with(prefix) → sorted list</div>
-<div class="method">students_in_grade(grade) → sorted list</div>`,
+      title: "4. Structured + Filters — ClassRoster",
+      pattern: "Pattern 3+4: structured value, filter by field, format output",
+      desc: "Build a <code>ClassRoster</code>. Each student has a name and grade stored as a dict. Filter by grade, filter by name prefix, format output. <code>promote</code> adds 1 to the grade.",
+      spec: `<div class="method">add_student(student_id, name, grade) → student_id</div>
+<div class="method">get_name(student_id) → name or None</div>
+<div class="method">get_grade(student_id) → grade or None</div>
+<div class="method">promote(student_id) → new grade or None</div>
+<div class="method">names_starting_with(prefix) → sorted list of student_ids</div>
+<div class="method">students_in_grade(grade) → sorted list of student_ids</div>
+<div class="method">format_roster() → sorted list of "student_id: name (grade N)"</div>`,
       starter: `class ClassRoster:
     def __init__(self):
         pass
 
-    def add_student(self, name, grade):
+    def add_student(self, student_id, name, grade):
         pass
 
-    def get_grade(self, name):
+    def get_name(self, student_id):
         pass
 
-    def remove_student(self, name):
+    def get_grade(self, student_id):
+        pass
+
+    def promote(self, student_id):
         pass
 
     def names_starting_with(self, prefix):
         pass
 
     def students_in_grade(self, grade):
+        pass
+
+    def format_roster(self):
         pass`,
       tests: `r = ClassRoster()
-r.add_student("Jaylen", 10)
-r.add_student("Maria", 10)
-r.add_student("Marcus", 11)
-r.add_student("Destiny", 10)
-assert r.get_grade("Jaylen") == 10
-assert r.students_in_grade(10) == ["Destiny", "Jaylen", "Maria"]
-assert r.students_in_grade(11) == ["Marcus"]
+assert r.add_student("s1", "Jaylen", 10) == "s1"
+assert r.add_student("s2", "Maria", 10) == "s2"
+assert r.add_student("s3", "Marcus", 11) == "s3"
+assert r.add_student("s4", "Destiny", 10) == "s4"
+assert r.get_name("s1") == "Jaylen"
+assert r.get_name("s99") is None
+assert r.get_grade("s1") == 10
+assert r.get_grade("s99") is None
+assert r.students_in_grade(10) == ["s1", "s2", "s4"]
 assert r.students_in_grade(12) == []
-assert r.names_starting_with("Ma") == ["Marcus", "Maria"]
-r.remove_student("Maria")
-assert r.students_in_grade(10) == ["Destiny", "Jaylen"]`,
-      hint: `Pattern 3 is like Pattern 2 but checks the VALUE:\nif self.data[key] == target:\n    results.append(key)`
+assert r.names_starting_with("s1") == ["s1"]
+assert r.names_starting_with("s") == ["s1", "s2", "s3", "s4"]
+assert r.promote("s1") == 11
+assert r.get_grade("s1") == 11
+assert r.promote("s99") is None
+assert r.students_in_grade(10) == ["s2", "s4"]
+assert r.format_roster() == ["s1: Jaylen (grade 11)", "s2: Maria (grade 10)", "s3: Marcus (grade 11)", "s4: Destiny (grade 10)"]`,
+      hint: `self.data[student_id] = {"name": name, "grade": grade}\nget_name: self.data[sid]["name"] (one field)\nget_grade: self.data[sid]["grade"] (different field)\npromote: self.data[sid]["grade"] += 1, return self.data[sid]["grade"]\nstudents_in_grade: if self.data[sid]["grade"] == grade (Pattern 3 on structured value)\nformat_roster: sid + ": " + self.data[sid]["name"] + " (grade " + str(self.data[sid]["grade"]) + ")"`
     },
     // PATTERN 4: Structured Value
     {
