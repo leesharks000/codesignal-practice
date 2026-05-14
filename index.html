@@ -47,6 +47,18 @@ header .subtitle { color: var(--dim); font-size: 13px; }
 .nav button.passed { border-color: var(--green); color: var(--green); }
 .nav button.passed.active { background: var(--green); color: #000; }
 
+.tracks { display: flex; gap: 8px; margin-bottom: 8px; }
+.track-btn {
+  background: var(--surface); border: 1px solid var(--border); color: var(--dim);
+  padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; transition: all 0.15s; flex: 1;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.track-btn:hover { border-color: var(--accent); color: var(--text); }
+.track-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.track-count { font-size: 10px; opacity: 0.7; }
+.track-desc { font-size: 12px; color: var(--dim); margin-bottom: 12px; }
+
 .exercise { margin-bottom: 24px; }
 .exercise h2 { font-size: 16px; font-weight: 700; margin-bottom: 4px; color: var(--accent); }
 .exercise .pattern-tag { font-size: 11px; color: var(--dim); margin-bottom: 12px; }
@@ -2035,15 +2047,34 @@ assert sg.has_value("missing", "color") == False`,
   ];
 }
 
+let currentTrack = 0;
+const tracks = [
+  { name: "Main", icon: "📋", start: 0, end: 16, desc: "Full class problems, Levels 1-2" },
+  { name: "Nesting", icon: "🔍", start: 17, end: 21, desc: "Return types and nesting depth" },
+  { name: "Micro µ", icon: "🎯", start: 22, end: 29, desc: "One confusion point each" },
+  { name: "Drills", icon: "🔧", start: 30, end: 41, desc: "Fill-line, spot-bug, trace" }
+];
+
 function render() {
   const ex = exercises[currentEx];
   const app = document.getElementById('app');
+  const track = tracks[currentTrack];
 
-  let navHtml = exercises.map((e, i) => {
+  let trackHtml = tracks.map((t, i) => {
+    let cls = i === currentTrack ? 'active' : '';
+    const trackPassed = Array.from({length: t.end - t.start + 1}, (_, j) => t.start + j)
+      .filter(j => passedSet.has(j)).length;
+    const trackTotal = t.end - t.start + 1;
+    return `<button class="track-btn ${cls}" onclick="setTrack(${i})">${t.icon} ${t.name} <span class="track-count">${trackPassed}/${trackTotal}</span></button>`;
+  }).join('');
+
+  let navHtml = '';
+  for (let i = track.start; i <= track.end; i++) {
     let cls = i === currentEx ? 'active' : '';
     if (passedSet.has(i)) cls += ' passed';
-    return `<button class="${cls}" onclick="goTo(${i})">${i + 1}</button>`;
-  }).join('');
+    const label = exercises[i].title.split('.')[0].split('—')[0].trim();
+    navHtml += `<button class="${cls}" onclick="goTo(${i})">${label}</button>`;
+  }
 
   app.innerHTML = `
     <header>
@@ -2053,6 +2084,9 @@ function render() {
       </div>
       <div class="subtitle">${passedSet.size}/${exercises.length} passed</div>
     </header>
+
+    <div class="tracks">${trackHtml}</div>
+    <div class="track-desc">${track.desc}</div>
 
     <div class="nav">${navHtml}</div>
 
@@ -2100,6 +2134,19 @@ function render() {
 
 function goTo(i) {
   currentEx = i;
+  // Update track if needed
+  for (let t = 0; t < tracks.length; t++) {
+    if (i >= tracks[t].start && i <= tracks[t].end) {
+      currentTrack = t;
+      break;
+    }
+  }
+  render();
+}
+
+function setTrack(t) {
+  currentTrack = t;
+  currentEx = tracks[t].start;
   render();
 }
 
