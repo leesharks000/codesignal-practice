@@ -1538,6 +1538,499 @@ assert jb.best_offer("Anthropic") == 220000
 assert jb.best_offer("Google") == 200000
 assert jb.best_offer("Nobody") is None`,
       hint: `self.data[job_id] = {"company": company, "salary": salary}\njobs_at: if self.data[jid]["company"] == company ← NOT jid["company"]\njobs_paying_above: if self.data[jid]["salary"] > amount\nbest_offer: loop, check company matches, track highest salary\n  best = None\n  for jid in self.data:\n      if self.data[jid]["company"] == company:\n          if best is None or self.data[jid]["salary"] > best:\n              best = self.data[jid]["salary"]\n  return best`
+    },
+    // ═══════════════════════════════════════════════════
+    // FILL-ONE-LINE DRILLS
+    // Everything is written. You fill ONE line.
+    // ═══════════════════════════════════════════════════
+    {
+      title: "F1. Fill: Store a record",
+      pattern: "Fill one line: create the inner dict",
+      desc: "Everything works except <code>register</code>. Replace the <code>pass</code> with one line that stores an empty dict for the new record.",
+      spec: `<div class="returns">Fill the ONE line marked pass. Don't change anything else.</div>`,
+      starter: `class Registry:
+    def __init__(self):
+        self.data = {}
+
+    def register(self, record_id):
+        if record_id in self.data:
+            return False
+        pass  # ← REPLACE THIS LINE: store an empty dict for record_id
+        return True
+
+    def set_field(self, record_id, field, value):
+        if record_id not in self.data:
+            return None
+        self.data[record_id][field] = value
+        return True
+
+    def get_field(self, record_id, field):
+        if record_id not in self.data:
+            return None
+        if field not in self.data[record_id]:
+            return None
+        return self.data[record_id][field]`,
+      tests: `r = Registry()
+assert r.register("rec_1") == True
+assert r.register("rec_1") == False
+assert r.set_field("rec_1", "author", "Sharks") == True
+assert r.get_field("rec_1", "author") == "Sharks"
+assert r.set_field("rec_99", "author", "X") is None
+assert r.get_field("rec_99", "author") is None`,
+      hint: `self.data[record_id] = {}`
+    },
+    {
+      title: "F2. Fill: Return formatted",
+      pattern: "Fill one line: build a return string from key + inner field",
+      desc: "Everything works except <code>label</code>. It should return <code>\"item_id: name\"</code>.",
+      spec: `<div class="returns">Fill the ONE line marked pass.</div>`,
+      starter: `class Shelf:
+    def __init__(self):
+        self.data = {}
+
+    def add(self, item_id, name, quantity):
+        self.data[item_id] = {"name": name, "quantity": quantity}
+        return item_id
+
+    def label(self, item_id):
+        if item_id not in self.data:
+            return None
+        pass  # ← REPLACE: return "item_id: name" using the actual values
+
+    def get_quantity(self, item_id):
+        if item_id not in self.data:
+            return None
+        return self.data[item_id]["quantity"]`,
+      tests: `s = Shelf()
+s.add("b1", "Antigone", 5)
+s.add("b2", "Pearl", 3)
+assert s.label("b1") == "b1: Antigone"
+assert s.label("b2") == "b2: Pearl"
+assert s.label("b99") is None
+assert s.get_quantity("b1") == 5`,
+      hint: `return item_id + ": " + self.data[item_id]["name"]`
+    },
+    {
+      title: "F3. Fill: Delete inner vs outer",
+      pattern: "Fill one line: delete a field, not the whole record",
+      desc: "The <code>remove_field</code> method should delete ONE field inside a record, not the whole record. Fill the correct <code>del</code> line.",
+      spec: `<div class="returns">Fill the ONE line marked pass.</div>`,
+      starter: `class MetadataStore:
+    def __init__(self):
+        self.data = {}
+
+    def create(self, record_id):
+        self.data[record_id] = {}
+        return True
+
+    def set_field(self, record_id, field, value):
+        if record_id not in self.data:
+            return None
+        self.data[record_id][field] = value
+        return True
+
+    def remove_field(self, record_id, field):
+        if record_id not in self.data:
+            return False
+        if field not in self.data[record_id]:
+            return False
+        pass  # ← REPLACE: delete the FIELD, not the whole record
+        return True
+
+    def get_field(self, record_id, field):
+        if record_id not in self.data:
+            return None
+        if field not in self.data[record_id]:
+            return None
+        return self.data[record_id][field]
+
+    def field_count(self, record_id):
+        if record_id not in self.data:
+            return 0
+        return len(self.data[record_id])`,
+      tests: `ms = MetadataStore()
+ms.create("doc_1")
+ms.set_field("doc_1", "author", "Sharks")
+ms.set_field("doc_1", "year", "2026")
+assert ms.field_count("doc_1") == 2
+assert ms.remove_field("doc_1", "year") == True
+assert ms.field_count("doc_1") == 1
+assert ms.get_field("doc_1", "year") is None
+assert ms.get_field("doc_1", "author") == "Sharks"
+assert ms.remove_field("doc_1", "missing") == False`,
+      hint: `del self.data[record_id][field]\nNOT: del self.data[record_id] (that deletes everything)`
+    },
+    {
+      title: "F4. Fill: The filter condition",
+      pattern: "Fill one line: the if-condition inside a filter loop",
+      desc: "Three methods, three filters. Each one is complete except the <code>if</code> condition. Fill the condition only.",
+      spec: `<div class="returns">Replace each <code>False</code> with the correct condition.</div>`,
+      starter: `class Catalog:
+    def __init__(self):
+        self.data = {}
+
+    def add(self, item_id, category, price):
+        self.data[item_id] = {"category": category, "price": price}
+
+    def items_starting_with(self, prefix):
+        results = []
+        for item_id in self.data:
+            if False:  # ← REPLACE: check if item_id starts with prefix
+                results.append(item_id)
+        return sorted(results)
+
+    def items_in_category(self, category):
+        results = []
+        for item_id in self.data:
+            if False:  # ← REPLACE: check if this item's category matches
+                results.append(item_id)
+        return sorted(results)
+
+    def items_cheaper_than(self, max_price):
+        results = []
+        for item_id in self.data:
+            if False:  # ← REPLACE: check if this item's price < max_price
+                results.append(item_id)
+        return sorted(results)`,
+      tests: `c = Catalog()
+c.add("pen_1", "office", 2)
+c.add("pen_2", "office", 5)
+c.add("book_1", "reading", 12)
+c.add("book_2", "reading", 8)
+assert c.items_starting_with("pen") == ["pen_1", "pen_2"]
+assert c.items_starting_with("book") == ["book_1", "book_2"]
+assert c.items_starting_with("z") == []
+assert c.items_in_category("office") == ["pen_1", "pen_2"]
+assert c.items_in_category("reading") == ["book_1", "book_2"]
+assert c.items_in_category("toys") == []
+assert c.items_cheaper_than(6) == ["pen_1", "pen_2"]
+assert c.items_cheaper_than(10) == ["book_2", "pen_1", "pen_2"]
+assert c.items_cheaper_than(1) == []`,
+      hint: `items_starting_with: item_id.startswith(prefix)\nitems_in_category: self.data[item_id]["category"] == category\nitems_cheaper_than: self.data[item_id]["price"] < max_price\n\nKey vs value: startswith checks the KEY, == and < check INSIDE the VALUE`
+    },
+    // ═══════════════════════════════════════════════════
+    // SPOT-THE-BUG DRILLS
+    // Code is complete but has ONE error. Find and fix it.
+    // ═══════════════════════════════════════════════════
+    {
+      title: "B1. Bug: key vs self.data[key]",
+      pattern: "Spot the bug: one method indexes into the key instead of self.data",
+      desc: "This <code>Archive</code> has a bug in ONE method. The error is <code>record_id[\"field\"]</code> somewhere — it should be <code>self.data[record_id][\"field\"]</code>. Find it and fix it.",
+      spec: `<div class="returns">Find and fix the ONE bug. All methods should pass.</div>`,
+      starter: `class Archive:
+    def __init__(self):
+        self.data = {}
+
+    def add_record(self, record_id, title, year):
+        self.data[record_id] = {"title": title, "year": year}
+        return record_id
+
+    def get_title(self, record_id):
+        if record_id not in self.data:
+            return None
+        return self.data[record_id]["title"]
+
+    def get_year(self, record_id):
+        if record_id not in self.data:
+            return None
+        return self.data[record_id]["year"]
+
+    def records_from_year(self, year):
+        results = []
+        for record_id in self.data:
+            if record_id["year"] == year:
+                results.append(record_id)
+        return sorted(results)
+
+    def records_starting_with(self, prefix):
+        results = []
+        for record_id in self.data:
+            if record_id.startswith(prefix):
+                results.append(record_id)
+        return sorted(results)`,
+      tests: `a = Archive()
+a.add_record("ea_001", "Provenance After AI", 2026)
+a.add_record("ea_002", "Combat Scholasticism", 2026)
+a.add_record("ph_001", "Pearl", 2014)
+assert a.get_title("ea_001") == "Provenance After AI"
+assert a.get_year("ph_001") == 2014
+assert a.records_from_year(2026) == ["ea_001", "ea_002"]
+assert a.records_from_year(2014) == ["ph_001"]
+assert a.records_starting_with("ea") == ["ea_001", "ea_002"]`,
+      hint: `records_from_year has: record_id["year"]\nShould be: self.data[record_id]["year"]\n\nrecord_id is just "ea_001" — a string. You can't index into it with ["year"].\nYou need self.data[record_id] to open the drawer first.`
+    },
+    {
+      title: "B2. Bug: overwriting the whole record",
+      pattern: "Spot the bug: one method replaces the dict instead of updating a field",
+      desc: "This <code>Account</code> has a bug in <code>set_status</code>. It accidentally destroys all other fields. Find and fix it.",
+      spec: `<div class="returns">Find and fix the ONE bug. All methods should pass.</div>`,
+      starter: `class Account:
+    def __init__(self):
+        self.data = {}
+
+    def create(self, account_id, owner):
+        if account_id in self.data:
+            return "exists"
+        self.data[account_id] = {"owner": owner, "balance": 0, "status": "active"}
+        return "created"
+
+    def set_status(self, account_id, status):
+        if account_id not in self.data:
+            return None
+        self.data[account_id] = {"status": status}
+        return status
+
+    def get_balance(self, account_id):
+        if account_id not in self.data:
+            return None
+        return self.data[account_id]["balance"]
+
+    def deposit(self, account_id, amount):
+        if account_id not in self.data:
+            return None
+        self.data[account_id]["balance"] += amount
+        return self.data[account_id]["balance"]`,
+      tests: `a = Account()
+assert a.create("a1", "Sharks") == "created"
+assert a.deposit("a1", 500) == 500
+assert a.set_status("a1", "frozen") == "frozen"
+assert a.get_balance("a1") == 500`,
+      hint: `set_status has: self.data[account_id] = {"status": status}\nThis REPLACES the entire dict — owner and balance are gone.\n\nShould be: self.data[account_id]["status"] = status\nThis changes ONE FIELD and leaves everything else intact.`
+    },
+    {
+      title: "B3. Bug: quoted variable name",
+      pattern: "Spot the bug: variable name in quotes becomes a literal string",
+      desc: "This <code>PropertyStore</code> has a bug: a variable is accidentally in quotes, so every property gets stored under the same key. Find and fix it.",
+      spec: `<div class="returns">Find and fix the ONE bug. All methods should pass.</div>`,
+      starter: `class PropertyStore:
+    def __init__(self):
+        self.data = {}
+
+    def register(self, server_id):
+        if server_id in self.data:
+            return False
+        self.data[server_id] = {}
+        return True
+
+    def set_prop(self, server_id, prop_name, value):
+        if server_id not in self.data:
+            return None
+        self.data[server_id]["prop_name"] = value
+        return True
+
+    def get_prop(self, server_id, prop_name):
+        if server_id not in self.data:
+            return None
+        if prop_name not in self.data[server_id]:
+            return None
+        return self.data[server_id][prop_name]
+
+    def count_props(self, server_id):
+        if server_id not in self.data:
+            return 0
+        return len(self.data[server_id])`,
+      tests: `ps = PropertyStore()
+ps.register("srv_1")
+assert ps.set_prop("srv_1", "color", "red") == True
+assert ps.set_prop("srv_1", "size", "large") == True
+assert ps.get_prop("srv_1", "color") == "red"
+assert ps.get_prop("srv_1", "size") == "large"
+assert ps.count_props("srv_1") == 2`,
+      hint: `set_prop has: self.data[server_id]["prop_name"] = value\n"prop_name" in quotes is a LITERAL STRING — every call stores under the same key.\n\nShould be: self.data[server_id][prop_name] = value\nWithout quotes, prop_name is the VARIABLE — "color", "size", etc.`
+    },
+    {
+      title: "B4. Bug: wrong return level",
+      pattern: "Spot the bug: returning the dict when you should return a field, or vice versa",
+      desc: "This <code>Directory</code> has bugs in TWO return statements — one returns too much, one returns too little. Find and fix both.",
+      spec: `<div class="returns">Find and fix the TWO bugs. All methods should pass.</div>`,
+      starter: `class Directory:
+    def __init__(self):
+        self.data = {}
+
+    def add_person(self, person_id, name, department):
+        self.data[person_id] = {"name": name, "department": department}
+        return person_id
+
+    def get_name(self, person_id):
+        if person_id not in self.data:
+            return None
+        return self.data[person_id]
+
+    def get_full_record(self, person_id):
+        if person_id not in self.data:
+            return None
+        return self.data[person_id]["name"]
+
+    def get_department(self, person_id):
+        if person_id not in self.data:
+            return None
+        return self.data[person_id]["department"]`,
+      tests: `d = Directory()
+d.add_person("p1", "Sharks", "Research")
+d.add_person("p2", "Feist", "Poetry")
+assert d.get_name("p1") == "Sharks"
+assert d.get_full_record("p1") == {"name": "Sharks", "department": "Research"}
+assert d.get_department("p2") == "Poetry"
+assert d.get_name("p99") is None`,
+      hint: `get_name returns self.data[person_id] — that's the WHOLE DICT, not just the name.\nShould be: self.data[person_id]["name"]\n\nget_full_record returns self.data[person_id]["name"] — that's just ONE FIELD.\nShould be: self.data[person_id]`
+    },
+    // ═══════════════════════════════════════════════════
+    // MUTATION TRACE DRILLS
+    // Given self.data before, write the line that produces after
+    // ═══════════════════════════════════════════════════
+    {
+      title: "T1. Trace: Write the mutation",
+      pattern: "Mutation trace: given before/after, write the line",
+      desc: "A <code>Mutator</code> class has four methods that each do ONE thing to <code>self.data</code>. Each method body is <code>pass</code>. Replace each <code>pass</code> with the one correct line. Read the comments and tests to know what each should do.",
+      spec: `<div class="returns">Replace each pass with ONE line.</div>`,
+      starter: `class Mutator:
+    def __init__(self):
+        self.data = {}
+
+    def create_record(self, rid):
+        # Before: self.data = {}
+        # After:  self.data = {"r1": {}}
+        pass
+
+    def set_inner(self, rid, key, val):
+        # Before: self.data = {"r1": {}}
+        # After:  self.data = {"r1": {"author": "Sharks"}}
+        pass
+
+    def update_inner(self, rid, key, val):
+        # Before: self.data = {"r1": {"author": "Sharks"}}
+        # After:  self.data = {"r1": {"author": "Sigil"}}
+        pass
+
+    def delete_inner(self, rid, key):
+        # Before: self.data = {"r1": {"author": "Sigil", "year": "2026"}}
+        # After:  self.data = {"r1": {"author": "Sigil"}}
+        pass`,
+      tests: `m = Mutator()
+m.create_record("r1")
+assert m.data == {"r1": {}}
+m.set_inner("r1", "author", "Sharks")
+assert m.data == {"r1": {"author": "Sharks"}}
+m.update_inner("r1", "author", "Sigil")
+assert m.data == {"r1": {"author": "Sigil"}}
+m.set_inner("r1", "year", "2026")
+assert m.data == {"r1": {"author": "Sigil", "year": "2026"}}
+m.delete_inner("r1", "year")
+assert m.data == {"r1": {"author": "Sigil"}}`,
+      hint: `create_record: self.data[rid] = {}\nset_inner: self.data[rid][key] = val\nupdate_inner: self.data[rid][key] = val (same line! set and update are identical)\ndelete_inner: del self.data[rid][key]`
+    },
+    {
+      title: "T2. Trace: Arithmetic mutations",
+      pattern: "Mutation trace: +=, -=, and len()",
+      desc: "A <code>NumberMutator</code> has methods that modify numbers inside structured values. Replace each <code>pass</code>. Read the before/after comments.",
+      spec: `<div class="returns">Replace each pass with ONE line.</div>`,
+      starter: `class NumberMutator:
+    def __init__(self):
+        self.data = {}
+
+    def create(self, key, amount):
+        # Before: self.data = {}
+        # After:  self.data = {"wallet": {"balance": 100}}
+        pass
+
+    def add_to(self, key, amount):
+        # Before: self.data = {"wallet": {"balance": 100}}
+        # After:  self.data = {"wallet": {"balance": 150}}
+        pass
+
+    def subtract_from(self, key, amount):
+        # Before: self.data = {"wallet": {"balance": 150}}
+        # After:  self.data = {"wallet": {"balance": 120}}
+        pass
+
+    def read(self, key):
+        # Returns the balance number, not the dict
+        pass
+
+    def count_records(self):
+        # Returns how many keys are in self.data
+        pass`,
+      tests: `nm = NumberMutator()
+nm.create("wallet", 100)
+assert nm.data == {"wallet": {"balance": 100}}
+assert nm.read("wallet") == 100
+nm.add_to("wallet", 50)
+assert nm.data == {"wallet": {"balance": 150}}
+nm.subtract_from("wallet", 30)
+assert nm.data == {"wallet": {"balance": 120}}
+nm.create("savings", 500)
+assert nm.count_records() == 2
+assert nm.read("savings") == 500`,
+      hint: `create: self.data[key] = {"balance": amount}\nadd_to: self.data[key]["balance"] += amount\nsubtract_from: self.data[key]["balance"] -= amount\nread: return self.data[key]["balance"]\ncount_records: return len(self.data)`
+    },
+    {
+      title: "T3. Trace: Formatted scan",
+      pattern: "Mutation trace: loop through inner dict, build formatted strings",
+      desc: "A <code>Scanner</code> has a <code>scan</code> method that should list all fields in a record as <code>\"key=value\"</code> strings, sorted. The method body is empty. Write the whole body (4-5 lines).",
+      spec: `<div class="returns">Write the body of scan. Everything else is done.</div>`,
+      starter: `class Scanner:
+    def __init__(self):
+        self.data = {}
+
+    def create(self, record_id):
+        self.data[record_id] = {}
+
+    def set_field(self, record_id, field, value):
+        self.data[record_id][field] = value
+
+    def scan(self, record_id):
+        # Return sorted list of "field=value" strings
+        # Return [] if record doesn't exist
+        pass`,
+      tests: `sc = Scanner()
+sc.create("doc_1")
+sc.set_field("doc_1", "author", "Sharks")
+sc.set_field("doc_1", "year", "2026")
+sc.set_field("doc_1", "abstract", "Meaning survives")
+assert sc.scan("doc_1") == ["abstract=Meaning survives", "author=Sharks", "year=2026"]
+assert sc.scan("doc_99") == []
+sc.create("doc_2")
+assert sc.scan("doc_2") == []`,
+      hint: `if record_id not in self.data:\n    return []\nresults = []\nfor field, value in self.data[record_id].items():\n    results.append(field + "=" + value)\nreturn sorted(results)`
+    },
+    {
+      title: "T4. Trace: Existence checks at two levels",
+      pattern: "Mutation trace: check outer, then inner, return right thing",
+      desc: "A <code>SafeGet</code> has three get methods. Each needs different existence checks. Write only the method bodies.",
+      spec: `<div class="returns">Write the body of each get method. Storage is done for you.</div>`,
+      starter: `class SafeGet:
+    def __init__(self):
+        self.data = {}
+
+    def store(self, outer, inner, value):
+        if outer not in self.data:
+            self.data[outer] = {}
+        self.data[outer][inner] = value
+
+    def get_record(self, outer):
+        # Return whole inner dict, or None if outer missing
+        pass
+
+    def get_value(self, outer, inner):
+        # Return value, or None if outer OR inner missing
+        pass
+
+    def has_value(self, outer, inner):
+        # Return True/False — does this specific value exist?
+        pass`,
+      tests: `sg = SafeGet()
+sg.store("box", "color", "red")
+sg.store("box", "size", "large")
+sg.store("bag", "color", "blue")
+assert sg.get_record("box") == {"color": "red", "size": "large"}
+assert sg.get_record("missing") is None
+assert sg.get_value("box", "color") == "red"
+assert sg.get_value("box", "missing") is None
+assert sg.get_value("missing", "color") is None
+assert sg.has_value("box", "color") == True
+assert sg.has_value("box", "missing") == False
+assert sg.has_value("missing", "color") == False`,
+      hint: `get_record:\n  if outer not in self.data: return None\n  return self.data[outer]\n\nget_value:\n  if outer not in self.data: return None\n  if inner not in self.data[outer]: return None\n  return self.data[outer][inner]\n\nhas_value:\n  if outer not in self.data: return False\n  if inner not in self.data[outer]: return False\n  return True`
     }
   ];
 }
