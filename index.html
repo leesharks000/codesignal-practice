@@ -893,6 +893,259 @@ assert store.delete_field("doc_2", "author") == True
 assert store.field_count("doc_2") == 0
 assert store.get_field("doc_2", "author") is None`,
       hint: `set_field: create inner dict if missing — if rid not in self.data: self.data[rid] = {}\nthen self.data[rid][field] = value\nreturn record_id + "/" + field  (set OVERWRITES, no duplicate check)\ndelete_field: after del, check if len == 0, remove whole record\nscan: for field, value in self.data[rid].items(): append field+"="+value\nscan_by_prefix: same but add if field.startswith(prefix)`
+    },
+    // NESTING DRILL 1: Key vs Value
+    {
+      title: "18. Key vs Value — ScoreBoard",
+      pattern: "Drill: know what's the label and what's inside",
+      desc: "Build a <code>ScoreBoard</code>. Simple dict, but each method returns something different — sometimes the key, sometimes the value, sometimes both. Pay attention to what the spec asks you to return.",
+      spec: `<div class="method">add_player(name, score) → "name" (return the NAME, not the score)</div>
+<div class="method">get_score(name) → score or None (return the SCORE, not the name)</div>
+<div class="method">update_score(name, score) → new score or None (OVERWRITE and return new score)</div>
+<div class="method">format_player(name) → "name:score" or None</div>
+<div class="method">all_players() → sorted list of NAMES only</div>`,
+      starter: `class ScoreBoard:
+    def __init__(self):
+        pass
+
+    def add_player(self, name, score):
+        pass
+
+    def get_score(self, name):
+        pass
+
+    def update_score(self, name, score):
+        pass
+
+    def format_player(self, name):
+        pass
+
+    def all_players(self):
+        pass`,
+      tests: `sb = ScoreBoard()
+assert sb.add_player("Jaylen", 95) == "Jaylen"
+assert sb.add_player("Maria", 88) == "Maria"
+assert sb.get_score("Jaylen") == 95
+assert sb.get_score("Nobody") is None
+assert sb.update_score("Jaylen", 100) == 100
+assert sb.get_score("Jaylen") == 100
+assert sb.update_score("Ghost", 50) is None
+assert sb.format_player("Jaylen") == "Jaylen:100"
+assert sb.format_player("Maria") == "Maria:88"
+assert sb.format_player("Ghost") is None
+assert sb.all_players() == ["Jaylen", "Maria"]`,
+      hint: `self.data[name] = score (simple value, not a dict)\nadd_player returns: name (the argument, NOT self.data[name])\nget_score returns: self.data[name] (the value INSIDE)\nformat_player: name + ":" + str(self.data[name])\nall_players: sorted(self.data.keys()) or sorted list from loop`
+    },
+    // NESTING DRILL 2: One level of nesting
+    {
+      title: "19. One Level Deep — StudentRecord",
+      pattern: "Drill: self.data[key] vs self.data[key]['field']",
+      desc: "Build a <code>StudentRecord</code>. Each student has a name and grade stored as a dict. Practice reaching one level deep. Every method needs <code>self.data[student_id]</code> first, then <code>[\"field\"]</code> to go deeper.",
+      spec: `<div class="method">add_student(student_id, name, grade) → student_id (return the ID)</div>
+<div class="method">get_name(student_id) → name or None</div>
+<div class="method">get_grade(student_id) → grade or None</div>
+<div class="method">get_record(student_id) → full dict or None</div>
+<div class="method">format_student(student_id) → "name (grade N)" or None</div>
+<div class="method">promote(student_id) → new grade or None (add 1 to grade)</div>`,
+      starter: `class StudentRecord:
+    def __init__(self):
+        pass
+
+    def add_student(self, student_id, name, grade):
+        pass
+
+    def get_name(self, student_id):
+        pass
+
+    def get_grade(self, student_id):
+        pass
+
+    def get_record(self, student_id):
+        pass
+
+    def format_student(self, student_id):
+        pass
+
+    def promote(self, student_id):
+        pass`,
+      tests: `sr = StudentRecord()
+assert sr.add_student("s1", "Jaylen", 10) == "s1"
+assert sr.add_student("s2", "Maria", 9) == "s2"
+assert sr.get_name("s1") == "Jaylen"
+assert sr.get_name("s99") is None
+assert sr.get_grade("s1") == 10
+assert sr.get_grade("s99") is None
+assert sr.get_record("s1") == {"name": "Jaylen", "grade": 10}
+assert sr.get_record("s99") is None
+assert sr.format_student("s1") == "Jaylen (grade 10)"
+assert sr.format_student("s99") is None
+assert sr.promote("s2") == 10
+assert sr.get_grade("s2") == 10
+assert sr.promote("s99") is None`,
+      hint: `self.data[student_id] = {"name": name, "grade": grade}\nget_name: self.data[student_id]["name"] (one level deep)\nget_record: self.data[student_id] (the whole inner dict)\nformat_student: self.data[sid]["name"] + " (grade " + str(self.data[sid]["grade"]) + ")"\npromote: self.data[sid]["grade"] += 1`
+    },
+    // NESTING DRILL 3: Which level am I at?
+    {
+      title: "20. Three Returns — ShelfManager",
+      pattern: "Drill: return key, return value, return inner field",
+      desc: "Build a <code>ShelfManager</code>. Items have a name and a location. Some methods return the item_id (key), some return the whole record (value), some return one field inside the record. The drill is knowing which level you're at.",
+      spec: `<div class="method">add_item(item_id, name, location) → item_id</div>
+<div class="method">find_item(item_id) → full dict or None</div>
+<div class="method">where_is(item_id) → location string or None</div>
+<div class="method">move_item(item_id, new_location) → new_location or None</div>
+<div class="method">items_on_shelf(location) → sorted list of item_ids</div>
+<div class="method">catalog() → sorted list of "item_id: name" strings</div>`,
+      starter: `class ShelfManager:
+    def __init__(self):
+        pass
+
+    def add_item(self, item_id, name, location):
+        pass
+
+    def find_item(self, item_id):
+        pass
+
+    def where_is(self, item_id):
+        pass
+
+    def move_item(self, item_id, new_location):
+        pass
+
+    def items_on_shelf(self, location):
+        pass
+
+    def catalog(self):
+        pass`,
+      tests: `sm = ShelfManager()
+assert sm.add_item("b1", "Antigone", "shelf_A") == "b1"
+assert sm.add_item("b2", "Pearl", "shelf_B") == "b2"
+assert sm.add_item("b3", "Oedipus", "shelf_A") == "b3"
+assert sm.find_item("b1") == {"name": "Antigone", "location": "shelf_A"}
+assert sm.find_item("b99") is None
+assert sm.where_is("b1") == "shelf_A"
+assert sm.where_is("b99") is None
+assert sm.move_item("b1", "shelf_C") == "shelf_C"
+assert sm.where_is("b1") == "shelf_C"
+assert sm.move_item("b99", "shelf_C") is None
+assert sm.items_on_shelf("shelf_A") == ["b3"]
+assert sm.items_on_shelf("shelf_B") == ["b2"]
+assert sm.items_on_shelf("shelf_Z") == []
+assert sm.catalog() == ["b1: Antigone", "b2: Pearl", "b3: Oedipus"]`,
+      hint: `add_item returns: item_id (the KEY — just the argument)\nfind_item returns: self.data[item_id] (the whole INNER DICT)\nwhere_is returns: self.data[item_id]["location"] (ONE FIELD inside)\nmove_item: self.data[item_id]["location"] = new_location, return new_location\ncatalog: for id in self.data: append id + ": " + self.data[id]["name"]`
+    },
+    // NESTING DRILL 4: Open fields + formatted access
+    {
+      title: "21. Open Fields + Formatting — TagStore",
+      pattern: "Drill: caller-named keys inside a dict-of-dicts",
+      desc: "Build a <code>TagStore</code> where items are created empty, then tags are added by the caller. You don't know the tag names in advance. Practice the difference between <code>item_id</code>, <code>self.data[item_id]</code>, <code>tag_name</code>, and <code>self.data[item_id][tag_name]</code>.",
+      spec: `<div class="method">create_item(item_id) → True or False</div>
+<div class="method">set_tag(item_id, tag_name, tag_value) → "item_id#tag_name" or None</div>
+<div class="method">get_tag(item_id, tag_name) → tag_value or None</div>
+<div class="method">list_tags(item_id) → sorted list of tag_name strings, or []</div>
+<div class="method">list_tag_values(item_id) → sorted list of "tag_name=tag_value", or []</div>
+<div class="method">items_with_tag(tag_name) → sorted list of item_ids that have this tag</div>`,
+      starter: `class TagStore:
+    def __init__(self):
+        pass
+
+    def create_item(self, item_id):
+        pass
+
+    def set_tag(self, item_id, tag_name, tag_value):
+        pass
+
+    def get_tag(self, item_id, tag_name):
+        pass
+
+    def list_tags(self, item_id):
+        pass
+
+    def list_tag_values(self, item_id):
+        pass
+
+    def items_with_tag(self, tag_name):
+        pass`,
+      tests: `ts = TagStore()
+assert ts.create_item("doc_1") == True
+assert ts.create_item("doc_2") == True
+assert ts.create_item("doc_1") == False
+assert ts.set_tag("doc_1", "color", "red") == "doc_1#color"
+assert ts.set_tag("doc_1", "size", "large") == "doc_1#size"
+assert ts.set_tag("doc_1", "priority", "high") == "doc_1#priority"
+assert ts.set_tag("doc_2", "color", "blue") == "doc_2#color"
+assert ts.set_tag("doc_99", "color", "red") is None
+assert ts.get_tag("doc_1", "color") == "red"
+assert ts.get_tag("doc_1", "missing") is None
+assert ts.get_tag("doc_99", "color") is None
+assert ts.list_tags("doc_1") == ["color", "priority", "size"]
+assert ts.list_tags("doc_2") == ["color"]
+assert ts.list_tags("doc_99") == []
+assert ts.list_tag_values("doc_1") == ["color=red", "priority=high", "size=large"]
+assert ts.list_tag_values("doc_99") == []
+assert ts.items_with_tag("color") == ["doc_1", "doc_2"]
+assert ts.items_with_tag("size") == ["doc_1"]
+assert ts.items_with_tag("missing") == []
+assert ts.set_tag("doc_1", "color", "green") == "doc_1#color"
+assert ts.get_tag("doc_1", "color") == "green"`,
+      hint: `create_item: self.data[item_id] = {} (empty dict)\nset_tag: self.data[item_id][tag_name] = tag_value (overwrites)\nreturn: item_id + "#" + tag_name (both are ARGUMENTS, not lookups)\nget_tag: TWO checks: item exists, THEN tag exists inside item\nlist_tags: sorted(self.data[item_id].keys())\nlist_tag_values: for k, v in self.data[item_id].items(): k+"="+v\nitems_with_tag: for item_id in self.data: if tag_name in self.data[item_id]`
+    },
+    // COMPREHENSIVE: All nesting levels in one problem
+    {
+      title: "22. All Levels — EmployeeDirectory",
+      pattern: "Comprehensive: fixed fields + open fields + filters + formatted returns",
+      desc: "Build an <code>EmployeeDirectory</code>. Employees have fixed fields (name, department) AND open-ended skills added by the caller. Methods return keys, values, inner fields, formatted strings, and filtered lists. This is the whole game.",
+      spec: `<div class="method">hire(emp_id, name, department) → "hired" or "exists"</div>
+<div class="method">add_skill(emp_id, skill) → count of skills or None</div>
+<div class="method">get_employee(emp_id) → full dict or None</div>
+<div class="method">get_department(emp_id) → department string or None</div>
+<div class="method">has_skill(emp_id, skill) → True or False</div>
+<div class="method">team_members(department) → sorted list of emp_ids</div>
+<div class="method">roster() → sorted list of "emp_id: name (department)" strings</div>`,
+      starter: `class EmployeeDirectory:
+    def __init__(self):
+        pass
+
+    def hire(self, emp_id, name, department):
+        pass
+
+    def add_skill(self, emp_id, skill):
+        pass
+
+    def get_employee(self, emp_id):
+        pass
+
+    def get_department(self, emp_id):
+        pass
+
+    def has_skill(self, emp_id, skill):
+        pass
+
+    def team_members(self, department):
+        pass
+
+    def roster(self):
+        pass`,
+      tests: `ed = EmployeeDirectory()
+assert ed.hire("e1", "Sharks", "Research") == "hired"
+assert ed.hire("e2", "Feist", "Research") == "hired"
+assert ed.hire("e3", "Sigil", "Philosophy") == "hired"
+assert ed.hire("e1", "Sharks", "Research") == "exists"
+assert ed.add_skill("e1", "Python") == 1
+assert ed.add_skill("e1", "Zenodo") == 2
+assert ed.add_skill("e1", "Wikidata") == 3
+assert ed.add_skill("e99", "Java") is None
+assert ed.get_employee("e1") == {"name": "Sharks", "department": "Research", "skills": ["Python", "Zenodo", "Wikidata"]}
+assert ed.get_employee("e99") is None
+assert ed.get_department("e1") == "Research"
+assert ed.get_department("e99") is None
+assert ed.has_skill("e1", "Python") == True
+assert ed.has_skill("e1", "Java") == False
+assert ed.has_skill("e99", "Python") == False
+assert ed.team_members("Research") == ["e1", "e2"]
+assert ed.team_members("Philosophy") == ["e3"]
+assert ed.team_members("Marketing") == []
+assert ed.roster() == ["e1: Sharks (Research)", "e2: Feist (Research)", "e3: Sigil (Philosophy)"]`,
+      hint: `hire: self.data[emp_id] = {"name": name, "department": department, "skills": []}\nadd_skill: self.data[emp_id]["skills"].append(skill), return len(self.data[emp_id]["skills"])\nget_employee: return self.data[emp_id] (whole dict)\nget_department: return self.data[emp_id]["department"] (one field)\nhas_skill: skill in self.data[emp_id]["skills"]\nroster: id + ": " + self.data[id]["name"] + " (" + self.data[id]["department"] + ")"`
     }
   ];
 }
