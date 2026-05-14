@@ -219,10 +219,10 @@ assert p.check("rice") == 6
 assert p.consume("ghost", 1) is None
 assert p.restock("tomatoes", 5) == 8
 assert p.restock("ghost", 5) is None
-assert p.low_stock(5) == ["oil", "tomatoes"]
+assert p.low_stock(5) == ["oil"]
 assert p.use_up("oil") == True
 assert p.use_up("oil") == False
-assert p.low_stock(5) == ["tomatoes"]`,
+assert p.low_stock(5) == []`,
       hint: `self.data[item] = quantity\nconsume: check exists, then check self.data[item] < amount → "empty", else subtract\nrestock: self.data[item] += amount, return self.data[item]\nlow_stock: for item in self.data: if self.data[item] <= threshold`
     },
     // PATTERN 2: Prefix Filter — with value filter and formatting
