@@ -446,6 +446,190 @@ store.set("name", "Sigil")
 store.restore("save_2")
 assert store.get("name") == "Sharks"`,
       hint: `self.data = {}\nself.backups = {}\nbackup: self.backups[backup_id] = copy.deepcopy(self.data)\nrestore: self.data = copy.deepcopy(self.backups[backup_id])`
+    },
+    // OPEN-FIELD REGISTRY
+    {
+      title: "9. Open Fields — ServerRegistry",
+      pattern: "Swerve: caller picks the field names, not you",
+      desc: "Build a <code>ServerRegistry</code> where the caller registers servers (empty dict), then sets properties by name. The field names aren't known in advance — the caller chooses them.",
+      spec: `<div class="method">register_server(server_id) → True or False (if exists)</div>
+<div class="method">set_property(server_id, prop_name, value) → "server_id.prop_name" or None (if server missing)</div>
+<div class="method">get_property(server_id, prop_name) → value or None (if server or property missing)</div>
+<div class="method">delete_property(server_id, prop_name) → True or False</div>`,
+      starter: `class ServerRegistry:
+    def __init__(self):
+        pass
+
+    def register_server(self, server_id):
+        pass
+
+    def set_property(self, server_id, prop_name, value):
+        pass
+
+    def get_property(self, server_id, prop_name):
+        pass
+
+    def delete_property(self, server_id, prop_name):
+        pass`,
+      tests: `reg = ServerRegistry()
+assert reg.register_server("srv_1") == True
+assert reg.register_server("srv_2") == True
+assert reg.register_server("srv_1") == False
+assert reg.set_property("srv_1", "status", "online") == "srv_1.status"
+assert reg.set_property("srv_1", "load", "42") == "srv_1.load"
+assert reg.set_property("srv_99", "status", "online") is None
+assert reg.get_property("srv_1", "status") == "online"
+assert reg.get_property("srv_1", "load") == "42"
+assert reg.get_property("srv_1", "missing") is None
+assert reg.get_property("srv_99", "status") is None
+assert reg.set_property("srv_1", "status", "offline") == "srv_1.status"
+assert reg.get_property("srv_1", "status") == "offline"
+assert reg.delete_property("srv_1", "load") == True
+assert reg.get_property("srv_1", "load") is None
+assert reg.delete_property("srv_1", "load") == False
+assert reg.delete_property("srv_99", "load") == False`,
+      hint: `register: self.data[server_id] = {}  (empty dict — fields added later)\nset_property: self.data[server_id][prop_name] = value\nget_property: TWO checks — server exists, THEN property exists\nreturn: server_id + "." + prop_name  (NOT self.data[server_id])`
+    },
+    // FORMATTED LISTING with .items()
+    {
+      title: "10. Formatted Listing — ConfigStore",
+      pattern: "Swerve: .items() loop, formatted string output",
+      desc: "Build a <code>ConfigStore</code> where you set config values and list them formatted as <code>\"key=value\"</code>. Practice the <code>.items()</code> loop.",
+      spec: `<div class="method">set_config(namespace, key, value) → "namespace/key"</div>
+<div class="method">get_config(namespace, key) → value or None</div>
+<div class="method">list_configs(namespace) → sorted list of "key=value" strings, or []</div>
+<div class="method">list_by_prefix(namespace, prefix) → sorted list of "key=value" where key starts with prefix</div>`,
+      starter: `class ConfigStore:
+    def __init__(self):
+        pass
+
+    def set_config(self, namespace, key, value):
+        pass
+
+    def get_config(self, namespace, key):
+        pass
+
+    def list_configs(self, namespace):
+        pass
+
+    def list_by_prefix(self, namespace, prefix):
+        pass`,
+      tests: `cfg = ConfigStore()
+assert cfg.set_config("app", "debug", "true") == "app/debug"
+assert cfg.set_config("app", "version", "2.0") == "app/version"
+assert cfg.set_config("app", "db_host", "localhost") == "app/db_host"
+assert cfg.set_config("db", "port", "5432") == "db/port"
+assert cfg.get_config("app", "debug") == "true"
+assert cfg.get_config("app", "missing") is None
+assert cfg.get_config("ghost", "debug") is None
+assert cfg.list_configs("app") == ["db_host=localhost", "debug=true", "version=2.0"]
+assert cfg.list_configs("db") == ["port=5432"]
+assert cfg.list_configs("ghost") == []
+assert cfg.list_by_prefix("app", "d") == ["db_host=localhost", "debug=true"]
+assert cfg.list_by_prefix("app", "v") == ["version=2.0"]
+assert cfg.list_by_prefix("app", "z") == []
+assert cfg.set_config("app", "debug", "false") == "app/debug"
+assert cfg.get_config("app", "debug") == "false"
+assert cfg.list_configs("app") == ["db_host=localhost", "debug=false", "version=2.0"]`,
+      hint: `set_config: create namespace dict if missing, then set key\nlist_configs uses .items():\n  for key, value in self.data[namespace].items():\n      results.append(key + "=" + value)\nlist_by_prefix: same but add if key.startswith(prefix)\nset overwrites — no duplicate check`
+    },
+    // FULL LEVEL 1-2 with open fields
+    {
+      title: "11. Level 1+2 — DatasetCatalog",
+      pattern: "Full problem: open fields + formatted listing + filters",
+      desc: "Build a <code>DatasetCatalog</code>. Register datasets, add metadata fields by name, list them formatted, and filter by value. This combines all the swerves.",
+      spec: `<div class="method">register_dataset(dataset_id, owner) → "registered" or "exists"</div>
+<div class="method">set_metadata(dataset_id, key, value) → "dataset_id:key" or None</div>
+<div class="method">get_metadata(dataset_id, key) → value or None</div>
+<div class="method">delete_metadata(dataset_id, key) → True or False</div>
+<div class="method">list_metadata(dataset_id) → sorted list of "key:value" or []</div>
+<div class="method">datasets_by_owner(owner) → sorted list of dataset_ids</div>`,
+      starter: `class DatasetCatalog:
+    def __init__(self):
+        pass
+
+    def register_dataset(self, dataset_id, owner):
+        pass
+
+    def set_metadata(self, dataset_id, key, value):
+        pass
+
+    def get_metadata(self, dataset_id, key):
+        pass
+
+    def delete_metadata(self, dataset_id, key):
+        pass
+
+    def list_metadata(self, dataset_id):
+        pass
+
+    def datasets_by_owner(self, owner):
+        pass`,
+      tests: `cat = DatasetCatalog()
+assert cat.register_dataset("ds_1", "Sharks") == "registered"
+assert cat.register_dataset("ds_2", "Feist") == "registered"
+assert cat.register_dataset("ds_1", "Sharks") == "exists"
+assert cat.set_metadata("ds_1", "format", "csv") == "ds_1:format"
+assert cat.set_metadata("ds_1", "rows", "10000") == "ds_1:rows"
+assert cat.set_metadata("ds_1", "author", "Sharks") == "ds_1:author"
+assert cat.set_metadata("ds_99", "format", "csv") is None
+assert cat.get_metadata("ds_1", "format") == "csv"
+assert cat.get_metadata("ds_1", "missing") is None
+assert cat.get_metadata("ds_99", "format") is None
+assert cat.list_metadata("ds_1") == ["author:Sharks", "format:csv", "rows:10000"]
+assert cat.list_metadata("ds_2") == []
+assert cat.list_metadata("ds_99") == []
+assert cat.delete_metadata("ds_1", "rows") == True
+assert cat.delete_metadata("ds_1", "rows") == False
+assert cat.list_metadata("ds_1") == ["author:Sharks", "format:csv"]
+assert cat.datasets_by_owner("Sharks") == ["ds_1"]
+assert cat.datasets_by_owner("Feist") == ["ds_2"]
+assert cat.datasets_by_owner("Nobody") == []`,
+      hint: `register: self.data[dataset_id] = {"_owner": owner}  (use _owner to keep it separate from metadata)\nset_metadata: self.data[dataset_id][key] = value\nlist_metadata: loop .items(), skip "_owner", append key+":"+value\ndatasets_by_owner: check self.data[did]["_owner"] == owner`
+    },
+    // TTL INTRO
+    {
+      title: "12. Level 3 Intro — Cache with TTL",
+      pattern: "Pattern 4 + timestamp: store expiration, check before returning",
+      desc: "Build a <code>Cache</code> where values expire after a set time. This is the core Level 3 move: storing a timestamp and checking it on retrieval.",
+      spec: `<div class="method">put(key, value, timestamp, ttl) → "OK"</div>
+<div class="method">fetch(key, timestamp) → value or None (if missing or expired)</div>
+<div class="method">remove(key) → True or False</div>
+<div class="method">active_keys(timestamp) → sorted list of non-expired keys</div>`,
+      starter: `class Cache:
+    def __init__(self):
+        pass
+
+    def put(self, key, value, timestamp, ttl):
+        pass
+
+    def fetch(self, key, timestamp):
+        pass
+
+    def remove(self, key):
+        pass
+
+    def active_keys(self, timestamp):
+        pass`,
+      tests: `c = Cache()
+assert c.put("token", "abc123", 100, 50) == "OK"
+assert c.put("session", "xyz", 100, 200) == "OK"
+assert c.put("temp", "delete_me", 100, 10) == "OK"
+assert c.fetch("token", 120) == "abc123"
+assert c.fetch("token", 160) is None
+assert c.fetch("session", 250) == "xyz"
+assert c.fetch("session", 301) is None
+assert c.fetch("missing", 100) is None
+assert c.fetch("temp", 105) == "delete_me"
+assert c.fetch("temp", 111) is None
+assert c.active_keys(105) == ["session", "temp", "token"]
+assert c.active_keys(120) == ["session", "token"]
+assert c.active_keys(155) == ["session"]
+assert c.active_keys(301) == []
+assert c.remove("session") == True
+assert c.remove("session") == False
+assert c.active_keys(120) == ["token"]`,
+      hint: `put: self.data[key] = {"value": value, "expires": timestamp + ttl}\nfetch: check key exists AND self.data[key]["expires"] > timestamp\nactive_keys: filter where self.data[key]["expires"] > timestamp`
     }
   ];
 }
