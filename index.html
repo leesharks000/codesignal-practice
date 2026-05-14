@@ -1211,6 +1211,333 @@ assert ed.team_members("Philosophy") == ["e3"]
 assert ed.team_members("Marketing") == []
 assert ed.roster() == ["e1: Sharks (Research)", "e2: Feist (Research)", "e3: Sigil (Philosophy)"]`,
       hint: `hire: self.data[emp_id] = {"name": name, "department": department, "skills": []}\nadd_skill: self.data[emp_id]["skills"].append(skill), return len(self.data[emp_id]["skills"])\nget_employee: return self.data[emp_id] (whole dict)\nget_department: return self.data[emp_id]["department"] (one field)\nhas_skill: skill in self.data[emp_id]["skills"]\nroster: id + ": " + self.data[id]["name"] + " (" + self.data[id]["department"] + ")"`
+    },
+    // ═══════════════════════════════════════════════════
+    // MICRO-DRILLS: Variable vs Key vs Value
+    // Short. Focused. One confusion point each.
+    // ═══════════════════════════════════════════════════
+    {
+      title: "µ1. What Do I Return?",
+      pattern: "Micro-drill: 5 methods, 5 different return types",
+      desc: "A <code>Box</code> stores one item. Five methods each return something different. The only question is: what am I returning?",
+      spec: `<div class="method">put(item_id, color) → item_id (the KEY you received)</div>
+<div class="method">get_color(item_id) → color (the VALUE stored) or None</div>
+<div class="method">label(item_id) → "item_id=color" (KEY + VALUE glued) or None</div>
+<div class="method">has(item_id) → True or False (just check existence)</div>
+<div class="method">all_ids() → sorted list of item_ids (KEYS only)</div>`,
+      starter: `class Box:
+    def __init__(self):
+        self.data = {}
+
+    def put(self, item_id, color):
+        pass
+
+    def get_color(self, item_id):
+        pass
+
+    def label(self, item_id):
+        pass
+
+    def has(self, item_id):
+        pass
+
+    def all_ids(self):
+        pass`,
+      tests: `b = Box()
+assert b.put("ball", "red") == "ball"
+assert b.put("cube", "blue") == "cube"
+assert b.get_color("ball") == "red"
+assert b.get_color("missing") is None
+assert b.label("ball") == "ball=red"
+assert b.label("cube") == "cube=blue"
+assert b.label("missing") is None
+assert b.has("ball") == True
+assert b.has("missing") == False
+assert b.all_ids() == ["ball", "cube"]`,
+      hint: `put: return item_id (the ARGUMENT — you already have it)\nget_color: return self.data[item_id] (LOOK IT UP)\nlabel: return item_id + "=" + self.data[item_id] (ARGUMENT + LOOKUP)\nhas: return item_id in self.data (just a check)\nall_ids: return sorted(self.data.keys())`
+    },
+    {
+      title: "µ2. Quotes or No Quotes?",
+      pattern: "Micro-drill: variable key vs literal key",
+      desc: "A <code>Locker</code> stores items with a fixed <code>\"status\"</code> field (literal, in quotes) and a caller-chosen tag (variable, no quotes). Know when to use quotes.",
+      spec: `<div class="method">store(locker_id, tag, value) → "OK" — also sets status to "occupied"</div>
+<div class="method">get_status(locker_id) → "occupied" or "empty" or None</div>
+<div class="method">get_tag_value(locker_id, tag) → value or None</div>
+<div class="method">clear(locker_id) → True or False — delete tag, set status to "empty"</div>`,
+      starter: `class Locker:
+    def __init__(self):
+        self.data = {}
+
+    def store(self, locker_id, tag, value):
+        pass
+
+    def get_status(self, locker_id):
+        pass
+
+    def get_tag_value(self, locker_id, tag):
+        pass
+
+    def clear(self, locker_id):
+        pass`,
+      tests: `lk = Locker()
+assert lk.store("L1", "color", "red") == "OK"
+assert lk.store("L2", "size", "large") == "OK"
+assert lk.get_status("L1") == "occupied"
+assert lk.get_status("L99") is None
+assert lk.get_tag_value("L1", "color") == "red"
+assert lk.get_tag_value("L2", "size") == "large"
+assert lk.get_tag_value("L1", "missing") is None
+assert lk.get_tag_value("L99", "color") is None
+assert lk.clear("L1") == True
+assert lk.get_status("L1") == "empty"
+assert lk.get_tag_value("L1", "color") is None
+assert lk.clear("L99") == False`,
+      hint: `store: self.data[locker_id] = {"status": "occupied", tag: value}\n"status" has QUOTES — you chose that name, it's always "status"\ntag has NO QUOTES — the caller chose that name, it's a variable\nget_status: self.data[lid]["status"] (literal key, quotes)\nget_tag_value: self.data[lid][tag] (variable key, no quotes)\nclear: del self.data[lid][tag]... but you don't know the tag name!\n  Instead: self.data[lid] = {"status": "empty"} (replace whole dict)`
+    },
+    {
+      title: "µ3. Two Levels of Checking",
+      pattern: "Micro-drill: does the outer key exist? does the inner key exist?",
+      desc: "A <code>Vault</code> has compartments, each with slots. You must check if the compartment exists, THEN check if the slot exists inside it. Two <code>if</code> statements, two levels.",
+      spec: `<div class="method">add_compartment(comp_id) → True or False</div>
+<div class="method">set_slot(comp_id, slot, value) → True or None (None if compartment missing)</div>
+<div class="method">get_slot(comp_id, slot) → value or None (None if either is missing)</div>
+<div class="method">has_slot(comp_id, slot) → True or False</div>`,
+      starter: `class Vault:
+    def __init__(self):
+        self.data = {}
+
+    def add_compartment(self, comp_id):
+        pass
+
+    def set_slot(self, comp_id, slot, value):
+        pass
+
+    def get_slot(self, comp_id, slot):
+        pass
+
+    def has_slot(self, comp_id, slot):
+        pass`,
+      tests: `v = Vault()
+assert v.add_compartment("safe_1") == True
+assert v.add_compartment("safe_1") == False
+assert v.set_slot("safe_1", "top", "gold") == True
+assert v.set_slot("safe_1", "bottom", "silver") == True
+assert v.set_slot("safe_99", "top", "gold") is None
+assert v.get_slot("safe_1", "top") == "gold"
+assert v.get_slot("safe_1", "middle") is None
+assert v.get_slot("safe_99", "top") is None
+assert v.has_slot("safe_1", "top") == True
+assert v.has_slot("safe_1", "middle") == False
+assert v.has_slot("safe_99", "top") == False`,
+      hint: `add_compartment: self.data[comp_id] = {}\nget_slot needs TWO checks:\n  if comp_id not in self.data: return None\n  if slot not in self.data[comp_id]: return None\n  return self.data[comp_id][slot]\nhas_slot: same two checks, return True at the end`
+    },
+    {
+      title: "µ4. Modify and Return",
+      pattern: "Micro-drill: change a field inside, return the new value",
+      desc: "A <code>Counter</code> tracks named counters. Increment adds 1, decrement subtracts 1 (not below 0). Always return the NEW value after changing it.",
+      spec: `<div class="method">create(name) → 0 (the starting value)</div>
+<div class="method">increment(name) → new value or None</div>
+<div class="method">decrement(name) → new value or None (don't go below 0)</div>
+<div class="method">read(name) → current value or None</div>
+<div class="method">reset(name) → 0 or None (set back to 0)</div>`,
+      starter: `class Counter:
+    def __init__(self):
+        self.data = {}
+
+    def create(self, name):
+        pass
+
+    def increment(self, name):
+        pass
+
+    def decrement(self, name):
+        pass
+
+    def read(self, name):
+        pass
+
+    def reset(self, name):
+        pass`,
+      tests: `c = Counter()
+assert c.create("clicks") == 0
+assert c.create("views") == 0
+assert c.increment("clicks") == 1
+assert c.increment("clicks") == 2
+assert c.increment("clicks") == 3
+assert c.read("clicks") == 3
+assert c.decrement("clicks") == 2
+assert c.decrement("views") == 0
+assert c.decrement("views") == 0
+assert c.increment("missing") is None
+assert c.decrement("missing") is None
+assert c.reset("clicks") == 0
+assert c.read("clicks") == 0
+assert c.reset("missing") is None`,
+      hint: `self.data[name] = 0 (simple value, not a dict)\nincrement: self.data[name] += 1, return self.data[name]\ndecrement: if self.data[name] == 0: return 0, else -= 1\nreset: self.data[name] = 0, return 0\nEvery method returns THE VALUE (self.data[name]), not the key`
+    },
+    {
+      title: "µ5. Filter the Key vs Filter the Value",
+      pattern: "Micro-drill: startswith on key vs == on value vs > on value",
+      desc: "A <code>PriceList</code> stores prices. Three different filters: one checks the key, one checks the value for equality, one checks the value for comparison. Same loop skeleton, different <code>if</code>.",
+      spec: `<div class="method">set_price(item, price) → item</div>
+<div class="method">items_starting_with(prefix) → sorted list of items (filter KEY)</div>
+<div class="method">items_at_price(price) → sorted list of items (filter VALUE ==)</div>
+<div class="method">items_above(price) → sorted list of items (filter VALUE >)</div>`,
+      starter: `class PriceList:
+    def __init__(self):
+        self.data = {}
+
+    def set_price(self, item, price):
+        pass
+
+    def items_starting_with(self, prefix):
+        pass
+
+    def items_at_price(self, price):
+        pass
+
+    def items_above(self, price):
+        pass`,
+      tests: `pl = PriceList()
+pl.set_price("apple", 1)
+pl.set_price("avocado", 2)
+pl.set_price("banana", 1)
+pl.set_price("blueberry", 5)
+assert pl.items_starting_with("a") == ["apple", "avocado"]
+assert pl.items_starting_with("b") == ["banana", "blueberry"]
+assert pl.items_starting_with("z") == []
+assert pl.items_at_price(1) == ["apple", "banana"]
+assert pl.items_at_price(5) == ["blueberry"]
+assert pl.items_at_price(99) == []
+assert pl.items_above(1) == ["avocado", "blueberry"]
+assert pl.items_above(4) == ["blueberry"]
+assert pl.items_above(10) == []`,
+      hint: `All three filters use the same skeleton:\n  results = []\n  for item in self.data:\n      if [CONDITION]:\n          results.append(item)\n  return sorted(results)\n\nThe CONDITION changes:\n  items_starting_with: item.startswith(prefix) — checking the KEY\n  items_at_price: self.data[item] == price — checking the VALUE\n  items_above: self.data[item] > price — checking the VALUE`
+    },
+    {
+      title: "µ6. Concatenation Gym",
+      pattern: "Micro-drill: build strings from keys, values, fields, and numbers",
+      desc: "A <code>Roster</code> stores people with age and role. Every method returns a differently formatted string. Pure concatenation practice.",
+      spec: `<div class="method">add(name, age, role) → "name"</div>
+<div class="method">badge(name) → "name (role)" or None</div>
+<div class="method">intro(name) → "name, age N" or None</div>
+<div class="method">full_card(name) → "name | role | age N" or None</div>
+<div class="method">directory() → sorted list of "name: role" strings</div>`,
+      starter: `class Roster:
+    def __init__(self):
+        self.data = {}
+
+    def add(self, name, age, role):
+        pass
+
+    def badge(self, name):
+        pass
+
+    def intro(self, name):
+        pass
+
+    def full_card(self, name):
+        pass
+
+    def directory(self):
+        pass`,
+      tests: `r = Roster()
+assert r.add("Sharks", 41, "teacher") == "Sharks"
+assert r.add("Feist", 35, "poet") == "Feist"
+assert r.badge("Sharks") == "Sharks (teacher)"
+assert r.badge("Nobody") is None
+assert r.intro("Sharks") == "Sharks, age 41"
+assert r.intro("Nobody") is None
+assert r.full_card("Sharks") == "Sharks | teacher | age 41"
+assert r.full_card("Feist") == "Feist | poet | age 35"
+assert r.full_card("Nobody") is None
+assert r.directory() == ["Feist: poet", "Sharks: teacher"]`,
+      hint: `self.data[name] = {"age": age, "role": role}\nbadge: name + " (" + self.data[name]["role"] + ")"\nintro: name + ", age " + str(self.data[name]["age"])\nfull_card: name + " | " + self.data[name]["role"] + " | age " + str(self.data[name]["age"])\nRemember: age is a NUMBER — wrap in str()`
+    },
+    {
+      title: "µ7. The Loop Variable Trap",
+      pattern: "Micro-drill: the loop variable is the KEY, not the value",
+      desc: "A <code>Gradebook</code>. Every method loops through <code>self.data</code>. The trap: <code>for name in self.data</code> gives you the KEY. To get the grade, you must go through <code>self.data[name]</code>.",
+      spec: `<div class="method">add(name, grade) → name</div>
+<div class="method">passing(threshold) → sorted list of NAMES with grade >= threshold</div>
+<div class="method">failing(threshold) → sorted list of NAMES with grade < threshold</div>
+<div class="method">honor_roll(threshold) → sorted list of "name: grade" where grade >= threshold</div>`,
+      starter: `class Gradebook:
+    def __init__(self):
+        self.data = {}
+
+    def add(self, name, grade):
+        pass
+
+    def passing(self, threshold):
+        pass
+
+    def failing(self, threshold):
+        pass
+
+    def honor_roll(self, threshold):
+        pass`,
+      tests: `g = Gradebook()
+g.add("Jaylen", 92)
+g.add("Maria", 78)
+g.add("Marcus", 65)
+g.add("Destiny", 95)
+assert g.passing(70) == ["Destiny", "Jaylen", "Maria"]
+assert g.passing(90) == ["Destiny", "Jaylen"]
+assert g.failing(70) == ["Marcus"]
+assert g.failing(80) == ["Marcus", "Maria"]
+assert g.honor_roll(90) == ["Destiny: 95", "Jaylen: 92"]
+assert g.honor_roll(96) == []`,
+      hint: `for name in self.data:           ← name is the KEY ("Jaylen")\n    self.data[name]               ← the VALUE (92)\n\npassing: if self.data[name] >= threshold → append name\nfailing: if self.data[name] < threshold → append name\nhonor_roll: append name + ": " + str(self.data[name])\n\nNEVER: if name >= threshold (that compares the STRING "Jaylen" to a number)`
+    },
+    {
+      title: "µ8. The self.data Prefix Trap",
+      pattern: "Micro-drill: always self.data[key]['field'], never key['field']",
+      desc: "A <code>JobBoard</code>. Every method reaches into a structured value. The trap: writing <code>job_id[\"company\"]</code> instead of <code>self.data[job_id][\"company\"]</code>. The loop variable is just a string — you can't index into it.",
+      spec: `<div class="method">post(job_id, company, salary) → job_id</div>
+<div class="method">get_company(job_id) → company or None</div>
+<div class="method">get_salary(job_id) → salary or None</div>
+<div class="method">jobs_at(company) → sorted list of job_ids</div>
+<div class="method">jobs_paying_above(amount) → sorted list of job_ids</div>
+<div class="method">best_offer(company) → highest salary at company, or None</div>`,
+      starter: `class JobBoard:
+    def __init__(self):
+        self.data = {}
+
+    def post(self, job_id, company, salary):
+        pass
+
+    def get_company(self, job_id):
+        pass
+
+    def get_salary(self, job_id):
+        pass
+
+    def jobs_at(self, company):
+        pass
+
+    def jobs_paying_above(self, amount):
+        pass
+
+    def best_offer(self, company):
+        pass`,
+      tests: `jb = JobBoard()
+assert jb.post("j1", "Anthropic", 180000) == "j1"
+assert jb.post("j2", "Google", 200000) == "j2"
+assert jb.post("j3", "Anthropic", 220000) == "j3"
+assert jb.post("j4", "Meta", 190000) == "j4"
+assert jb.get_company("j1") == "Anthropic"
+assert jb.get_company("j99") is None
+assert jb.get_salary("j3") == 220000
+assert jb.get_salary("j99") is None
+assert jb.jobs_at("Anthropic") == ["j1", "j3"]
+assert jb.jobs_at("Nobody") == []
+assert jb.jobs_paying_above(195000) == ["j2", "j3"]
+assert jb.jobs_paying_above(500000) == []
+assert jb.best_offer("Anthropic") == 220000
+assert jb.best_offer("Google") == 200000
+assert jb.best_offer("Nobody") is None`,
+      hint: `self.data[job_id] = {"company": company, "salary": salary}\njobs_at: if self.data[jid]["company"] == company ← NOT jid["company"]\njobs_paying_above: if self.data[jid]["salary"] > amount\nbest_offer: loop, check company matches, track highest salary\n  best = None\n  for jid in self.data:\n      if self.data[jid]["company"] == company:\n          if best is None or self.data[jid]["salary"] > best:\n              best = self.data[jid]["salary"]\n  return best`
     }
   ];
 }
