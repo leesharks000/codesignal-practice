@@ -630,6 +630,269 @@ assert c.remove("session") == True
 assert c.remove("session") == False
 assert c.active_keys(120) == ["token"]`,
       hint: `put: self.data[key] = {"value": value, "expires": timestamp + ttl}\nfetch: check key exists AND self.data[key]["expires"] > timestamp\nactive_keys: filter where self.data[key]["expires"] > timestamp`
+    },
+    // INVENTORY WITH QUANTITY MATH
+    {
+      title: "13. Quantity Math — InventoryManager",
+      pattern: "Pattern 4 + arithmetic: restock adds, sell subtracts with guard",
+      desc: "Build an <code>InventoryManager</code> with add/restock/sell. Sell checks stock before subtracting — same shape as withdraw checking balance.",
+      spec: `<div class="method">add_item(item_id, name, quantity) → "added" or "duplicate"</div>
+<div class="method">restock(item_id, amount) → new quantity or None</div>
+<div class="method">sell(item_id, amount) → new quantity or "out_of_stock" or None</div>
+<div class="method">check_stock(item_id) → quantity or None</div>`,
+      starter: `class InventoryManager:
+    def __init__(self):
+        pass
+
+    def add_item(self, item_id, name, quantity):
+        pass
+
+    def restock(self, item_id, amount):
+        pass
+
+    def sell(self, item_id, amount):
+        pass
+
+    def check_stock(self, item_id):
+        pass`,
+      tests: `inv = InventoryManager()
+assert inv.add_item("sku_1", "hoodie", 10) == "added"
+assert inv.add_item("sku_2", "hat", 5) == "added"
+assert inv.add_item("sku_1", "hoodie", 10) == "duplicate"
+assert inv.restock("sku_1", 20) == 30
+assert inv.restock("sku_99", 5) is None
+assert inv.check_stock("sku_1") == 30
+assert inv.check_stock("sku_99") is None
+assert inv.sell("sku_2", 3) == 2
+assert inv.sell("sku_2", 5) == "out_of_stock"
+assert inv.check_stock("sku_2") == 2
+assert inv.sell("sku_99", 1) is None`,
+      hint: `self.data[item_id] = {"name": name, "quantity": quantity}\nrestock: self.data[item_id]["quantity"] += amount\nsell: check self.data[item_id]["quantity"] < amount first\nreturn self.data[item_id]["quantity"] after change`
+    },
+    // INVENTORY + LEVEL 2 FILTERS
+    {
+      title: "14. Level 1+2 — InventoryManager Full",
+      pattern: "Quantity math + three filters: prefix, value, comparison",
+      desc: "Extend <code>InventoryManager</code> with Level 2 queries: find items by name prefix, by exact name, and items low on stock.",
+      spec: `<div class="method">add_item(item_id, name, quantity) → "added" or "duplicate"</div>
+<div class="method">restock(item_id, amount) → new quantity or None</div>
+<div class="method">sell(item_id, amount) → new quantity or "out_of_stock" or None</div>
+<div class="method">check_stock(item_id) → quantity or None</div>
+<div class="method">items_starting_with(prefix) → sorted list of item_ids</div>
+<div class="method">items_by_name(name) → sorted list of item_ids with that name</div>
+<div class="method">low_stock(threshold) → sorted list of item_ids with quantity &lt;= threshold</div>`,
+      starter: `class InventoryManager:
+    def __init__(self):
+        pass
+
+    def add_item(self, item_id, name, quantity):
+        pass
+
+    def restock(self, item_id, amount):
+        pass
+
+    def sell(self, item_id, amount):
+        pass
+
+    def check_stock(self, item_id):
+        pass
+
+    def items_starting_with(self, prefix):
+        pass
+
+    def items_by_name(self, name):
+        pass
+
+    def low_stock(self, threshold):
+        pass`,
+      tests: `inv = InventoryManager()
+inv.add_item("shoe_1", "sneaker", 20)
+inv.add_item("shoe_2", "boot", 3)
+inv.add_item("hat_1", "cap", 50)
+inv.add_item("hat_2", "beanie", 2)
+inv.sell("shoe_2", 1)
+assert inv.items_starting_with("shoe") == ["shoe_1", "shoe_2"]
+assert inv.items_starting_with("hat") == ["hat_1", "hat_2"]
+assert inv.items_starting_with("z") == []
+assert inv.items_by_name("sneaker") == ["shoe_1"]
+assert inv.items_by_name("ghost") == []
+assert inv.low_stock(5) == ["hat_2", "shoe_2"]
+assert inv.low_stock(50) == ["hat_1", "hat_2", "shoe_1", "shoe_2"]
+assert inv.low_stock(0) == []`,
+      hint: `items_starting_with: if item_id.startswith(prefix) — Pattern 2\nitems_by_name: if self.data[item_id]["name"] == name — Pattern 3\nlow_stock: if self.data[item_id]["quantity"] <= threshold — Pattern 3 with <=`
+    },
+    // LIBRARY WITH STATUS CHANGES + BORROWER
+    {
+      title: "15. Two-Field Changes — LibrarySystem",
+      pattern: "Pattern 4: change TWO fields at once (status + borrower)",
+      desc: "Build a <code>LibrarySystem</code> where checkout sets status AND records borrower. Return_book clears both. Don't forget to store <code>\"borrower\": None</code> at creation.",
+      spec: `<div class="method">add_book(book_id, title, genre) → "added" or "exists"</div>
+<div class="method">checkout(book_id, borrower) → "checked_out" or "unavailable" or None</div>
+<div class="method">return_book(book_id) → "returned" or "not_checked_out" or None</div>
+<div class="method">get_book(book_id) → dict or None</div>
+<div class="method">books_by_genre(genre) → sorted list of book_ids</div>
+<div class="method">available_books() → sorted list of book_ids with status "available"</div>
+<div class="method">books_checked_out_to(borrower) → sorted list of book_ids</div>`,
+      starter: `class LibrarySystem:
+    def __init__(self):
+        pass
+
+    def add_book(self, book_id, title, genre):
+        pass
+
+    def checkout(self, book_id, borrower):
+        pass
+
+    def return_book(self, book_id):
+        pass
+
+    def get_book(self, book_id):
+        pass
+
+    def books_by_genre(self, genre):
+        pass
+
+    def available_books(self):
+        pass
+
+    def books_checked_out_to(self, borrower):
+        pass`,
+      tests: `lib = LibrarySystem()
+assert lib.add_book("b1", "Antigone", "drama") == "added"
+assert lib.add_book("b2", "Pearl", "poetry") == "added"
+assert lib.add_book("b3", "Oedipus", "drama") == "added"
+assert lib.add_book("b1", "Antigone", "drama") == "exists"
+assert lib.get_book("b1") == {"title": "Antigone", "genre": "drama", "status": "available", "borrower": None}
+assert lib.checkout("b1", "Jaylen") == "checked_out"
+assert lib.get_book("b1")["borrower"] == "Jaylen"
+assert lib.checkout("b1", "Maria") == "unavailable"
+assert lib.checkout("b99", "Maria") is None
+assert lib.return_book("b1") == "returned"
+assert lib.get_book("b1")["status"] == "available"
+assert lib.get_book("b1")["borrower"] is None
+assert lib.return_book("b1") == "not_checked_out"
+assert lib.return_book("b99") is None
+lib.checkout("b1", "Jaylen")
+lib.checkout("b3", "Maria")
+assert lib.books_by_genre("drama") == ["b1", "b3"]
+assert lib.books_by_genre("poetry") == ["b2"]
+assert lib.available_books() == ["b2"]
+assert lib.books_checked_out_to("Jaylen") == ["b1"]
+assert lib.books_checked_out_to("Maria") == ["b3"]
+assert lib.books_checked_out_to("Nobody") == []`,
+      hint: `add_book: include "status": "available", "borrower": None\ncheckout: set BOTH status and borrower\nreturn_book: set status back, set borrower to None\navailable_books: filter where status == "available"\nchecked_out_to: filter where borrower == borrower arg`
+    },
+    // COURSE WITH CAPACITY
+    {
+      title: "16. Capacity Check — CourseRegistry",
+      pattern: "Pattern 4: enroll/drop with capacity guard + comparing two fields",
+      desc: "Build a <code>CourseRegistry</code>. Enroll adds 1 to enrollment, but not above capacity. The Level 2 filter <code>courses_with_space</code> compares two fields in the same record.",
+      spec: `<div class="method">add_course(course_id, subject, capacity) → "added" or "exists"</div>
+<div class="method">enroll(course_id) → new count or "full" or None</div>
+<div class="method">drop(course_id) → new count or None (don't go below 0)</div>
+<div class="method">get_course(course_id) → dict or None</div>
+<div class="method">courses_by_subject(subject) → sorted list</div>
+<div class="method">courses_with_space() → sorted list where enrolled &lt; capacity</div>`,
+      starter: `class CourseRegistry:
+    def __init__(self):
+        pass
+
+    def add_course(self, course_id, subject, capacity):
+        pass
+
+    def enroll(self, course_id):
+        pass
+
+    def drop(self, course_id):
+        pass
+
+    def get_course(self, course_id):
+        pass
+
+    def courses_by_subject(self, subject):
+        pass
+
+    def courses_with_space(self):
+        pass`,
+      tests: `reg = CourseRegistry()
+assert reg.add_course("ENG101", "English", 3) == "added"
+assert reg.add_course("HIS201", "History", 2) == "added"
+assert reg.add_course("ENG101", "English", 3) == "exists"
+assert reg.enroll("ENG101") == 1
+assert reg.enroll("ENG101") == 2
+assert reg.enroll("ENG101") == 3
+assert reg.enroll("ENG101") == "full"
+assert reg.enroll("BIO999") is None
+assert reg.get_course("ENG101") == {"subject": "English", "capacity": 3, "enrolled": 3}
+assert reg.drop("ENG101") == 2
+assert reg.drop("HIS201") == 0
+assert reg.drop("HIS201") == 0
+assert reg.drop("BIO999") is None
+assert reg.courses_by_subject("English") == ["ENG101"]
+assert reg.courses_by_subject("Math") == []
+reg.add_course("ENG202", "English", 2)
+assert reg.courses_by_subject("English") == ["ENG101", "ENG202"]
+assert reg.courses_with_space() == ["ENG101", "ENG202", "HIS201"]
+reg.enroll("ENG101")
+assert reg.courses_with_space() == ["ENG202", "HIS201"]`,
+      hint: `"enrolled": 0 in the initial dict\nenroll: check self.data[cid]["enrolled"] == self.data[cid]["capacity"]\ndrop: check self.data[cid]["enrolled"] == 0, return 0\ncourses_with_space: self.data[cid]["enrolled"] < self.data[cid]["capacity"]`
+    },
+    // ANNOTATIONSTORE - the reported CodeSignal shape
+    {
+      title: "17. CodeSignal Shape — AnnotationStore",
+      pattern: "The actual reported problem: dict-of-dicts, open fields, scan, scan_by_prefix",
+      desc: "Build an <code>AnnotationStore</code> — the most commonly reported Anthropic CodeSignal Level 1-2 shape. Records contain fields set by the caller. Scan returns formatted <code>\"field=value\"</code> strings.",
+      spec: `<div class="method">set_field(record_id, field, value) → "record_id/field"</div>
+<div class="method">get_field(record_id, field) → value or None</div>
+<div class="method">delete_field(record_id, field) → True or False (remove empty records)</div>
+<div class="method">field_count(record_id) → int (0 if missing)</div>
+<div class="method">scan(record_id) → sorted list of "field=value" or []</div>
+<div class="method">scan_by_prefix(record_id, prefix) → sorted list of "field=value" where field starts with prefix</div>`,
+      starter: `class AnnotationStore:
+    def __init__(self):
+        pass
+
+    def set_field(self, record_id, field, value):
+        pass
+
+    def get_field(self, record_id, field):
+        pass
+
+    def delete_field(self, record_id, field):
+        pass
+
+    def field_count(self, record_id):
+        pass
+
+    def scan(self, record_id):
+        pass
+
+    def scan_by_prefix(self, record_id, prefix):
+        pass`,
+      tests: `store = AnnotationStore()
+assert store.set_field("doc_1", "author", "Sharks") == "doc_1/author"
+assert store.set_field("doc_1", "year", "2026") == "doc_1/year"
+assert store.set_field("doc_1", "abstract", "Meaning survives") == "doc_1/abstract"
+assert store.set_field("doc_2", "author", "Feist") == "doc_2/author"
+assert store.get_field("doc_1", "author") == "Sharks"
+assert store.get_field("doc_1", "title") is None
+assert store.get_field("doc_99", "author") is None
+assert store.set_field("doc_1", "author", "Sigil") == "doc_1/author"
+assert store.get_field("doc_1", "author") == "Sigil"
+assert store.field_count("doc_1") == 3
+assert store.field_count("doc_99") == 0
+assert store.scan("doc_1") == ["abstract=Meaning survives", "author=Sigil", "year=2026"]
+assert store.scan("doc_99") == []
+assert store.scan_by_prefix("doc_1", "a") == ["abstract=Meaning survives", "author=Sigil"]
+assert store.scan_by_prefix("doc_1", "y") == ["year=2026"]
+assert store.scan_by_prefix("doc_1", "z") == []
+assert store.delete_field("doc_1", "year") == True
+assert store.field_count("doc_1") == 2
+assert store.delete_field("doc_1", "year") == False
+assert store.delete_field("doc_2", "author") == True
+assert store.field_count("doc_2") == 0
+assert store.get_field("doc_2", "author") is None`,
+      hint: `set_field: create inner dict if missing — if rid not in self.data: self.data[rid] = {}\nthen self.data[rid][field] = value\nreturn record_id + "/" + field  (set OVERWRITES, no duplicate check)\ndelete_field: after del, check if len == 0, remove whole record\nscan: for field, value in self.data[rid].items(): append field+"="+value\nscan_by_prefix: same but add if field.startswith(prefix)`
     }
   ];
 }
