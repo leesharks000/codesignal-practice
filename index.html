@@ -2064,6 +2064,141 @@ assert sg.has_value("box", "color") == True
 assert sg.has_value("box", "missing") == False
 assert sg.has_value("missing", "color") == False`,
       hint: `get_record:\n  if outer not in self.data: return None\n  return self.data[outer]\n\nget_value:\n  if outer not in self.data: return None\n  if inner not in self.data[outer]: return None\n  return self.data[outer][inner]\n\nhas_value:\n  if outer not in self.data: return False\n  if inner not in self.data[outer]: return False\n  return True`
+    },
+    // SIM TEST — Progressive Workspace format (Anthropic CodeSignal shape)
+    {
+      title: "SIM L1: Employee Directory — SET/GET/DELETE",
+      pattern: "Progressive workspace: parse string commands, dispatch, return string results",
+      desc: `<strong>⏱️ SIMULATED ANTHROPIC CODESIGNAL — LEVEL 1</strong><br><br>This is the <strong>actual format</strong> of the Anthropic CodeSignal test: you receive a list of string queries and return a list of string results. No class — one function.<br><br>Implement a simplified <strong>employee directory</strong>. Each department (accessed by a unique string key) contains employees (unique name within department) with an associated role (string value).<br><br><strong>Parse these string commands and dispatch:</strong>`,
+      spec: `<div class="method">SET &lt;dept&gt; &lt;name&gt; &lt;role&gt; → "" (insert/update name-role in dept; create dept if needed)</div>
+<div class="method">GET &lt;dept&gt; &lt;name&gt; → role string, or "" if dept/name not found</div>
+<div class="method">DELETE &lt;dept&gt; &lt;name&gt; → "true" if existed and deleted, "false" otherwise</div>
+<br><strong>Example:</strong><br>
+<pre>solution(["SET eng alice backend", "GET eng alice", "GET eng dave"])
+→ ["", "backend", ""]</pre>`,
+      starter: `def solution(queries):
+    result = []
+    data = {}
+    for q in queries:
+        parts = q.split()
+        op = parts[0]
+        # dispatch on op
+        pass
+    return result`,
+      tests: `# Basic SET/GET
+r = solution(["SET engineering alice backend", "SET engineering bob frontend", "SET marketing carol analyst"])
+assert r == ["", "", ""], f"Basic SET failed: {r}"
+
+# GET existing and missing
+r = solution(["SET engineering alice backend", "GET engineering alice", "GET engineering dave", "GET sales alice"])
+assert r == ["", "backend", "", ""], f"GET failed: {r}"
+
+# SET overwrites
+r = solution(["SET engineering alice backend", "SET engineering alice lead", "GET engineering alice"])
+assert r == ["", "", "lead"], f"Overwrite failed: {r}"
+
+# DELETE existing and missing
+r = solution(["SET engineering alice backend", "DELETE engineering alice", "DELETE engineering alice", "GET engineering alice"])
+assert r == ["", "true", "false", ""], f"DELETE failed: {r}"
+
+# DELETE from nonexistent dept
+r = solution(["DELETE sales nobody"])
+assert r == ["false"], f"DELETE nonexistent dept failed: {r}"
+
+# Mixed operations
+r = solution([
+    "SET engineering alice backend",
+    "SET engineering bob frontend",
+    "SET marketing carol analyst",
+    "GET engineering alice",
+    "GET engineering dave",
+    "SET engineering alice lead",
+    "GET engineering alice",
+    "DELETE engineering bob",
+    "DELETE engineering bob",
+    "GET engineering bob"
+])
+assert r == ["", "", "", "backend", "", "", "lead", "true", "false", ""], f"Mixed ops failed: {r}"
+
+# Empty database GET
+r = solution(["GET engineering alice"])
+assert r == [""], f"Empty GET failed: {r}"`,
+      hint: `Structure:\n  data = {}  # {dept: {name: role}}\n\nParsing:\n  parts = q.split()\n  op = parts[0]\n  if op == "SET": dept, name, role = parts[1], parts[2], parts[3]\n\nSET:\n  if dept not in data: data[dept] = {}\n  data[dept][name] = role\n  result.append("")\n\nGET:\n  if dept not in data or name not in data[dept]:\n      result.append("")\n  else:\n      result.append(data[dept][name])\n\nDELETE:\n  if dept in data and name in data[dept]:\n      del data[dept][name]\n      result.append("true")\n  else:\n      result.append("false")`
+    },
+    {
+      title: "SIM L1+2: Employee Directory — + SCAN/SCAN_BY_PREFIX",
+      pattern: "Progressive workspace Level 2: add filtering/scan to existing solution",
+      desc: `<strong>⏱️ SIMULATED ANTHROPIC CODESIGNAL — LEVEL 2</strong><br><br>Your Level 1 code carries over. Now add two new operations <strong>while keeping SET/GET/DELETE working</strong>. This is the refactoring test — can your code handle new requirements without breaking?`,
+      spec: `<div class="method">SET &lt;dept&gt; &lt;name&gt; &lt;role&gt; → "" (same as Level 1)</div>
+<div class="method">GET &lt;dept&gt; &lt;name&gt; → role or "" (same as Level 1)</div>
+<div class="method">DELETE &lt;dept&gt; &lt;name&gt; → "true"/"false" (same as Level 1)</div>
+<div class="method">SCAN &lt;dept&gt; → "name1(role1), name2(role2), ..." sorted alphabetically by name. Return "" if dept missing/empty.</div>
+<div class="method">SCAN_BY_PREFIX &lt;dept&gt; &lt;prefix&gt; → same as SCAN but only names starting with prefix. Return "" if none match.</div>
+<br><strong>Example:</strong><br>
+<pre>solution(["SET eng alice backend", "SET eng adam devops", "SET eng bob frontend", "SCAN eng", "SCAN_BY_PREFIX eng a"])
+→ ["", "", "", "adam(devops), alice(backend), bob(frontend)", "adam(devops), alice(backend)"]</pre>`,
+      starter: `def solution(queries):
+    result = []
+    data = {}
+    for q in queries:
+        parts = q.split()
+        op = parts[0]
+        # dispatch on op — handle SET, GET, DELETE, SCAN, SCAN_BY_PREFIX
+        pass
+    return result`,
+      tests: `# Level 1 still works (backward compat)
+r = solution(["SET engineering alice backend", "GET engineering alice", "DELETE engineering alice", "GET engineering alice"])
+assert r == ["", "backend", "true", ""], f"L1 backward compat failed: {r}"
+
+# Basic SCAN
+r = solution(["SET engineering alice backend", "SET engineering bob frontend", "SET engineering adam devops", "SCAN engineering"])
+assert r == ["", "", "", "adam(devops), alice(backend), bob(frontend)"], f"SCAN failed: {r}"
+
+# SCAN empty/missing dept
+r = solution(["SCAN sales"])
+assert r == [""], f"SCAN missing dept failed: {r}"
+
+# SCAN after delete empties dept
+r = solution(["SET engineering alice backend", "DELETE engineering alice", "SCAN engineering"])
+assert r == ["", "true", ""], f"SCAN empty after delete failed: {r}"
+
+# SCAN_BY_PREFIX basic
+r = solution(["SET engineering alice backend", "SET engineering adam devops", "SET engineering bob frontend", "SCAN_BY_PREFIX engineering a"])
+assert r == ["", "", "", "adam(devops), alice(backend)"], f"SCAN_BY_PREFIX failed: {r}"
+
+# SCAN_BY_PREFIX no match
+r = solution(["SET engineering alice backend", "SCAN_BY_PREFIX engineering z"])
+assert r == ["", ""], f"SCAN_BY_PREFIX no match failed: {r}"
+
+# SCAN_BY_PREFIX missing dept
+r = solution(["SCAN_BY_PREFIX sales a"])
+assert r == [""], f"SCAN_BY_PREFIX missing dept failed: {r}"
+
+# Full mixed flow
+r = solution([
+    "SET engineering alice backend",
+    "SET engineering adam devops",
+    "SET engineering bob frontend",
+    "SET marketing carol analyst",
+    "SET marketing carlos manager",
+    "SCAN engineering",
+    "SCAN_BY_PREFIX engineering a",
+    "SCAN_BY_PREFIX marketing car",
+    "SCAN_BY_PREFIX marketing z",
+    "DELETE engineering adam",
+    "SCAN engineering",
+    "SCAN sales"
+])
+assert r == ["", "", "", "", "", "adam(devops), alice(backend), bob(frontend)", "adam(devops), alice(backend)", "carlos(manager), carol(analyst)", "", "true", "alice(backend), bob(frontend)", ""], f"Full mixed flow failed: {r}"
+
+# Single employee SCAN
+r = solution(["SET hr zara recruiter", "SCAN hr"])
+assert r == ["", "zara(recruiter)"], f"Single employee SCAN failed: {r}"
+
+# SCAN_BY_PREFIX exact name match
+r = solution(["SET engineering alice backend", "SET engineering bob frontend", "SCAN_BY_PREFIX engineering alice"])
+assert r == ["", "", "alice(backend)"], f"Exact prefix match failed: {r}"`,
+      hint: `SCAN:\n  dept = parts[1]\n  if dept not in data or len(data[dept]) == 0:\n      result.append("")\n  else:\n      pairs = sorted(data[dept].items())  # sorts by key (name)\n      formatted = ", ".join(f"{name}({role})" for name, role in pairs)\n      result.append(formatted)\n\nSCAN_BY_PREFIX:\n  dept, prefix = parts[1], parts[2]\n  if dept not in data:\n      result.append("")\n  else:\n      pairs = sorted((n, r) for n, r in data[dept].items() if n.startswith(prefix))\n      if not pairs:\n          result.append("")\n      else:\n          result.append(", ".join(f"{n}({r})" for n, r in pairs))`
     }
   ];
 }
@@ -2073,7 +2208,8 @@ const tracks = [
   { name: "Main", icon: "📋", start: 0, end: 16, desc: "Full class problems, Levels 1-2" },
   { name: "Nesting", icon: "🔍", start: 17, end: 21, desc: "Return types and nesting depth" },
   { name: "Micro µ", icon: "🎯", start: 22, end: 29, desc: "One confusion point each" },
-  { name: "Drills", icon: "🔧", start: 30, end: 41, desc: "Fill-line, spot-bug, trace" }
+  { name: "Drills", icon: "🔧", start: 30, end: 41, desc: "Fill-line, spot-bug, trace" },
+  { name: "Sim Test", icon: "⏱️", start: 42, end: 43, desc: "Progressive workspace simulation (Anthropic format) — def solution(queries)" }
 ];
 
 function renderProgressDashboard() {
