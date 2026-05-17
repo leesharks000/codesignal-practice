@@ -136,6 +136,27 @@ let pyodide = null;
 let exercises = [];
 let currentEx = 0;
 let passedSet = new Set();
+let progressData = {}; // {exerciseIndex: {attempts, passes, fails, errors:[], lastAttempt}}
+let showProgress = false;
+
+// Load saved progress
+try {
+  const saved = localStorage.getItem('csp-progress');
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    progressData = parsed.progressData || {};
+    if (parsed.passed) parsed.passed.forEach(i => passedSet.add(i));
+  }
+} catch(e) {}
+
+function saveProgress() {
+  try {
+    localStorage.setItem('csp-progress', JSON.stringify({
+      passed: Array.from(passedSet),
+      progressData: progressData
+    }));
+  } catch(e) {}
+}
 
 function defineExercises() {
   exercises = [
@@ -2055,6 +2076,86 @@ const tracks = [
   { name: "Drills", icon: "🔧", start: 30, end: 41, desc: "Fill-line, spot-bug, trace" }
 ];
 
+function renderProgressDashboard() {
+  const totalAttempts = Object.values(progressData).reduce((s,p) => s + (p.attempts||0), 0);
+  const totalPasses = Object.values(progressData).reduce((s,p) => s + (p.passes||0), 0);
+  const allErrors = Object.values(progressData).flatMap(p => p.errors||[]);
+  const errorCounts = {};
+  allErrors.forEach(e => { errorCounts[e] = (errorCounts[e]||0) + 1; });
+  const errorTips = {
+    KeyError: "Missing guard: if key not in self.data",
+    TypeError: "None[key] — did create_item set None instead of {}?",
+    AttributeError: "Calling method on wrong type",
+    SyntaxError: "Check indentation, colons, quotes",
+    IndentationError: "Inconsistent indent — use 4 spaces",
+    NameError: "Variable not defined — typo or scope issue",
+    WrongValue: "Logic error — code runs but returns wrong result",
+    AssertionError: "Assertion failed — wrong return value"
+  };
+
+  let errorHtml = Object.entries(errorCounts).sort((a,b)=>b[1]-a[1]).map(([err,count]) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #2a2a3a">
+      <div>
+        <span style="color:#f77;font-weight:600">${err}</span>
+        <div style="font-size:11px;color:#888;margin-top:2px">${errorTips[err]||''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:${Math.min(count*16,120)}px;height:5px;background:#f7777744;border-radius:3px"><div style="width:100%;height:100%;background:#f77;border-radius:3px"></div></div>
+        <span style="color:#f77;font-weight:600;min-width:20px">${count}×</span>
+      </div>
+    </div>
+  `).join('');
+
+  let exerciseHtml = exercises.map((ex,i) => {
+    const pd = progressData[i];
+    const status = !pd ? '#444' : pd.passes > 0 ? 'var(--green)' : '#d29922';
+    const label = passedSet.has(i) ? '✓' : pd ? '◐' : '○';
+    return `
+      <div onclick="showProgress=false;goTo(${i})" style="display:flex;justify-content:space-between;align-items:center;padding:6px 4px;border-bottom:1px solid #1a1a2a;cursor:pointer;border-radius:4px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="color:${status};font-size:14px">${label}</span>
+          <span style="color:#ccc;font-size:12px">${ex.title.split('—')[0].trim()}</span>
+        </div>
+        <div style="font-size:11px;color:#888">
+          ${pd ? pd.attempts + ' att · ' + pd.passes + ' pass' + (pd.fails ? ' · ' + pd.fails + ' fail' : '') : '—'}
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div style="max-width:700px;margin:0 auto">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
+        <div style="background:#1a1a2a;border:1px solid #2a2a3a;border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:var(--green)">${passedSet.size}/${exercises.length}</div>
+          <div style="font-size:10px;color:#888;margin-top:4px">Solved</div>
+        </div>
+        <div style="background:#1a1a2a;border:1px solid #2a2a3a;border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#6bf">${totalAttempts}</div>
+          <div style="font-size:10px;color:#888;margin-top:4px">Attempts</div>
+        </div>
+        <div style="background:#1a1a2a;border:1px solid #2a2a3a;border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#d8f">${totalAttempts ? Math.round(totalPasses/totalAttempts*100)+'%' : '—'}</div>
+          <div style="font-size:10px;color:#888;margin-top:4px">Pass Rate</div>
+        </div>
+        <div style="background:#1a1a2a;border:1px solid #2a2a3a;border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#f77">${Object.keys(errorCounts).length}</div>
+          <div style="font-size:10px;color:#888;margin-top:4px">Error Types</div>
+        </div>
+      </div>
+      ${Object.keys(errorCounts).length ? `
+      <div style="background:#1a1a2a;border:1px solid #2a2a3a;border-radius:8px;padding:14px;margin-bottom:20px">
+        <h3 style="font-size:12px;color:#f77;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Recurring Errors — Focus Here</h3>
+        ${errorHtml}
+      </div>` : ''}
+      <div style="background:#1a1a2a;border:1px solid #2a2a3a;border-radius:8px;padding:14px">
+        <h3 style="font-size:12px;color:#6bf;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Exercise Breakdown</h3>
+        ${exerciseHtml}
+      </div>
+      <button onclick="if(confirm('Reset all progress?')){progressData={};passedSet.clear();saveProgress();render()}" style="margin-top:16px;background:transparent;border:1px solid #444;color:#888;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:11px">Reset Progress</button>
+    </div>
+  `;
+}
+
 function render() {
   const ex = exercises[currentEx];
   const app = document.getElementById('app');
@@ -2083,8 +2184,10 @@ function render() {
         <div class="subtitle">Five patterns. One card. That's the whole test.</div>
       </div>
       <div class="subtitle">${passedSet.size}/${exercises.length} passed</div>
+      <button onclick="showProgress=!showProgress;render()" style="background:${showProgress?'var(--accent)':'#2a2a3a'};color:#fff;border:1px solid var(--accent);padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;font-family:inherit">${showProgress?'← Back':'📊 Progress'}</button>
     </header>
 
+    ${showProgress ? renderProgressDashboard() : `
     <div class="tracks">${trackHtml}</div>
     <div class="track-desc">${track.desc}</div>
 
@@ -2117,6 +2220,7 @@ function render() {
 4. STRUCTURED: self.data[key] = {"field": val, "field2": val2}
 5. SNAPSHOT:   import copy; copy.deepcopy(self.data)</pre>
     </div>
+  `}
   `;
 
   // Handle tab in textarea
@@ -2236,6 +2340,14 @@ for r in _results:
       btn.textContent = '▶ Run Tests';
       status.className = 'status fail';
       status.textContent = 'Error in code';
+      // Track syntax/runtime error
+      if (!progressData[currentEx]) progressData[currentEx] = {attempts:0, passes:0, fails:0, errors:[], lastAttempt:null};
+      progressData[currentEx].attempts++;
+      progressData[currentEx].fails++;
+      progressData[currentEx].lastAttempt = new Date().toLocaleString();
+      const syntaxMatch = e.message.match(/(SyntaxError|IndentationError|NameError|TypeError)/);
+      progressData[currentEx].errors.push(syntaxMatch ? syntaxMatch[1] : 'SyntaxError');
+      saveProgress();
       return;
     }
     const stdout = pyodide.runPython('sys.stdout = sys.__stdout__\n_stdout.getvalue()');
@@ -2270,6 +2382,25 @@ for r in _results:
       status.className = 'status fail';
       status.textContent = '✗ Some tests failed';
     }
+
+    // Track progress
+    if (!progressData[currentEx]) progressData[currentEx] = {attempts:0, passes:0, fails:0, errors:[], lastAttempt:null};
+    const pd = progressData[currentEx];
+    pd.attempts++;
+    pd.lastAttempt = new Date().toLocaleString();
+    if (allPassed && lines.some(l => l.startsWith('PASS|'))) {
+      pd.passes++;
+    } else {
+      pd.fails++;
+      // Extract error types from fail lines
+      lines.filter(l => l.startsWith('FAIL|')).forEach(l => {
+        const errMatch = l.match(/(KeyError|TypeError|AttributeError|NameError|IndexError|ValueError|IndentationError|SyntaxError)/);
+        if (errMatch) pd.errors.push(errMatch[1]);
+        else if (l.includes('AssertionError') || l.includes('assert')) pd.errors.push('AssertionError');
+        else pd.errors.push('WrongValue');
+      });
+    }
+    saveProgress();
 
   } catch(e) {
     output.innerHTML = `<span class="fail-line">${e.message}</span>`;
