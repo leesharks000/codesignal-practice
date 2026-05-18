@@ -2065,140 +2065,61 @@ assert sg.has_value("box", "missing") == False
 assert sg.has_value("missing", "color") == False`,
       hint: `get_record:\n  if outer not in self.data: return None\n  return self.data[outer]\n\nget_value:\n  if outer not in self.data: return None\n  if inner not in self.data[outer]: return None\n  return self.data[outer][inner]\n\nhas_value:\n  if outer not in self.data: return False\n  if inner not in self.data[outer]: return False\n  return True`
     },
-    // SIM TEST — Progressive Workspace format (Anthropic CodeSignal shape)
+    // SIM TEST — 4-Level Progressive Simulation (Anthropic CodeSignal format)
+    // Each level builds on the previous. L2 starter includes L1 solution. L3 includes L1+L2. Etc.
     {
-      title: "SIM L1: Employee Directory — SET/GET/DELETE",
-      pattern: "Progressive workspace: parse string commands, dispatch, return string results",
-      desc: `<strong>⏱️ SIMULATED ANTHROPIC CODESIGNAL — LEVEL 1</strong><br><br>This is the <strong>actual format</strong> of the Anthropic CodeSignal test: you receive a list of string queries and return a list of string results. No class — one function.<br><br>Implement a simplified <strong>employee directory</strong>. Each department (accessed by a unique string key) contains employees (unique name within department) with an associated role (string value).<br><br><strong>Parse these string commands and dispatch:</strong>`,
-      spec: `<div class="method">SET &lt;dept&gt; &lt;name&gt; &lt;role&gt; → "" (insert/update name-role in dept; create dept if needed)</div>
-<div class="method">GET &lt;dept&gt; &lt;name&gt; → role string, or "" if dept/name not found</div>
-<div class="method">DELETE &lt;dept&gt; &lt;name&gt; → "true" if existed and deleted, "false" otherwise</div>
-<br><strong>Example:</strong><br>
-<pre>solution(["SET eng alice backend", "GET eng alice", "GET eng dave"])
-→ ["", "backend", ""]</pre>`,
-      starter: `def solution(queries):
-    result = []
-    data = {}
-    for q in queries:
-        parts = q.split()
-        op = parts[0]
-        # dispatch on op
-        pass
-    return result`,
-      tests: `# Basic SET/GET
-r = solution(["SET engineering alice backend", "SET engineering bob frontend", "SET marketing carol analyst"])
-assert r == ["", "", ""], f"Basic SET failed: {r}"
-
-# GET existing and missing
-r = solution(["SET engineering alice backend", "GET engineering alice", "GET engineering dave", "GET sales alice"])
-assert r == ["", "backend", "", ""], f"GET failed: {r}"
-
-# SET overwrites
-r = solution(["SET engineering alice backend", "SET engineering alice lead", "GET engineering alice"])
-assert r == ["", "", "lead"], f"Overwrite failed: {r}"
-
-# DELETE existing and missing
-r = solution(["SET engineering alice backend", "DELETE engineering alice", "DELETE engineering alice", "GET engineering alice"])
-assert r == ["", "true", "false", ""], f"DELETE failed: {r}"
-
-# DELETE from nonexistent dept
-r = solution(["DELETE sales nobody"])
-assert r == ["false"], f"DELETE nonexistent dept failed: {r}"
-
-# Mixed operations
-r = solution([
-    "SET engineering alice backend",
-    "SET engineering bob frontend",
-    "SET marketing carol analyst",
-    "GET engineering alice",
-    "GET engineering dave",
-    "SET engineering alice lead",
-    "GET engineering alice",
-    "DELETE engineering bob",
-    "DELETE engineering bob",
-    "GET engineering bob"
-])
-assert r == ["", "", "", "backend", "", "", "lead", "true", "false", ""], f"Mixed ops failed: {r}"
-
-# Empty database GET
-r = solution(["GET engineering alice"])
-assert r == [""], f"Empty GET failed: {r}"`,
-      hint: `Structure:\n  data = {}  # {dept: {name: role}}\n\nParsing:\n  parts = q.split()\n  op = parts[0]\n  if op == "SET": dept, name, role = parts[1], parts[2], parts[3]\n\nSET:\n  if dept not in data: data[dept] = {}\n  data[dept][name] = role\n  result.append("")\n\nGET:\n  if dept not in data or name not in data[dept]:\n      result.append("")\n  else:\n      result.append(data[dept][name])\n\nDELETE:\n  if dept in data and name in data[dept]:\n      del data[dept][name]\n      result.append("true")\n  else:\n      result.append("false")`
+      title: "SIM L1: Warehouse — Basic Inventory",
+      pattern: "Progressive Level 1: CRUD with nested dict, guard checks, overwrite",
+      desc: `<strong>⏱️ PROGRESSIVE SIM — LEVEL 1 of 4</strong><br><br>Build a <code>Warehouse</code> inventory system. This is the <strong>actual Anthropic CodeSignal format</strong>: a class that grows across 4 levels. Your Level 1 architecture must accommodate Levels 2-4 (which you haven't seen yet).<br><br><strong>Tip from candidate reports:</strong> start with a class, not bare functions. Think about what extra data you might need to store later.`,
+      spec: `<div class="method">add_product(product_id, category, price) → product_id</div>
+<div class="method">get_product(product_id) → {"category": ..., "price": ...} or None</div>
+<div class="method">remove_product(product_id) → True if removed, False if not found</div>
+<div class="method">update_price(product_id, new_price) → new_price if exists, None otherwise</div>
+<br><em>add_product overwrites if product_id already exists.</em>`,
+      starter: `class Warehouse:\n    def __init__(self):\n        pass\n\n    def add_product(self, product_id, category, price):\n        pass\n\n    def get_product(self, product_id):\n        pass\n\n    def remove_product(self, product_id):\n        pass\n\n    def update_price(self, product_id, new_price):\n        pass`,
+      tests: `w = Warehouse()\nassert w.add_product("laptop", "electronics", 999) == "laptop"\nassert w.add_product("phone", "electronics", 699) == "phone"\nassert w.add_product("desk", "furniture", 250) == "desk"\n\n# GET existing\np = w.get_product("laptop")\nassert p is not None\nassert p["category"] == "electronics"\nassert p["price"] == 999\n\n# GET missing\nassert w.get_product("missing") is None\n\n# UPDATE existing\nassert w.update_price("laptop", 899) == 899\nassert w.get_product("laptop")["price"] == 899\n\n# UPDATE missing\nassert w.update_price("missing", 100) is None\n\n# REMOVE existing\nassert w.remove_product("desk") == True\nassert w.get_product("desk") is None\n\n# REMOVE already gone\nassert w.remove_product("desk") == False\n\n# OVERWRITE\nassert w.add_product("laptop", "tech", 1099) == "laptop"\nassert w.get_product("laptop")["category"] == "tech"\nassert w.get_product("laptop")["price"] == 1099\n\n# Empty warehouse\nw2 = Warehouse()\nassert w2.get_product("anything") is None\nassert w2.remove_product("anything") == False\nassert w2.update_price("anything", 50) is None`,
+      hint: `self.data = {}\n\nadd_product:\n  self.data[product_id] = {"category": category, "price": price}\n  return product_id\n\nget_product:\n  if product_id not in self.data: return None\n  return self.data[product_id]\n\nremove_product:\n  if product_id not in self.data: return False\n  del self.data[product_id]\n  return True\n\nupdate_price:\n  if product_id not in self.data: return None\n  self.data[product_id]["price"] = new_price\n  return new_price`
     },
     {
-      title: "SIM L1+2: Employee Directory — + SCAN/SCAN_BY_PREFIX",
-      pattern: "Progressive workspace Level 2: add filtering/scan to existing solution",
-      desc: `<strong>⏱️ SIMULATED ANTHROPIC CODESIGNAL — LEVEL 2</strong><br><br>Your Level 1 code carries over. Now add two new operations <strong>while keeping SET/GET/DELETE working</strong>. This is the refactoring test — can your code handle new requirements without breaking?`,
-      spec: `<div class="method">SET &lt;dept&gt; &lt;name&gt; &lt;role&gt; → "" (same as Level 1)</div>
-<div class="method">GET &lt;dept&gt; &lt;name&gt; → role or "" (same as Level 1)</div>
-<div class="method">DELETE &lt;dept&gt; &lt;name&gt; → "true"/"false" (same as Level 1)</div>
-<div class="method">SCAN &lt;dept&gt; → "name1(role1), name2(role2), ..." sorted alphabetically by name. Return "" if dept missing/empty.</div>
-<div class="method">SCAN_BY_PREFIX &lt;dept&gt; &lt;prefix&gt; → same as SCAN but only names starting with prefix. Return "" if none match.</div>
-<br><strong>Example:</strong><br>
-<pre>solution(["SET eng alice backend", "SET eng adam devops", "SET eng bob frontend", "SCAN eng", "SCAN_BY_PREFIX eng a"])
-→ ["", "", "", "adam(devops), alice(backend), bob(frontend)", "adam(devops), alice(backend)"]</pre>`,
-      starter: `def solution(queries):
-    result = []
-    data = {}
-    for q in queries:
-        parts = q.split()
-        op = parts[0]
-        # dispatch on op — handle SET, GET, DELETE, SCAN, SCAN_BY_PREFIX
-        pass
-    return result`,
-      tests: `# Level 1 still works (backward compat)
-r = solution(["SET engineering alice backend", "GET engineering alice", "DELETE engineering alice", "GET engineering alice"])
-assert r == ["", "backend", "true", ""], f"L1 backward compat failed: {r}"
-
-# Basic SCAN
-r = solution(["SET engineering alice backend", "SET engineering bob frontend", "SET engineering adam devops", "SCAN engineering"])
-assert r == ["", "", "", "adam(devops), alice(backend), bob(frontend)"], f"SCAN failed: {r}"
-
-# SCAN empty/missing dept
-r = solution(["SCAN sales"])
-assert r == [""], f"SCAN missing dept failed: {r}"
-
-# SCAN after delete empties dept
-r = solution(["SET engineering alice backend", "DELETE engineering alice", "SCAN engineering"])
-assert r == ["", "true", ""], f"SCAN empty after delete failed: {r}"
-
-# SCAN_BY_PREFIX basic
-r = solution(["SET engineering alice backend", "SET engineering adam devops", "SET engineering bob frontend", "SCAN_BY_PREFIX engineering a"])
-assert r == ["", "", "", "adam(devops), alice(backend)"], f"SCAN_BY_PREFIX failed: {r}"
-
-# SCAN_BY_PREFIX no match
-r = solution(["SET engineering alice backend", "SCAN_BY_PREFIX engineering z"])
-assert r == ["", ""], f"SCAN_BY_PREFIX no match failed: {r}"
-
-# SCAN_BY_PREFIX missing dept
-r = solution(["SCAN_BY_PREFIX sales a"])
-assert r == [""], f"SCAN_BY_PREFIX missing dept failed: {r}"
-
-# Full mixed flow
-r = solution([
-    "SET engineering alice backend",
-    "SET engineering adam devops",
-    "SET engineering bob frontend",
-    "SET marketing carol analyst",
-    "SET marketing carlos manager",
-    "SCAN engineering",
-    "SCAN_BY_PREFIX engineering a",
-    "SCAN_BY_PREFIX marketing car",
-    "SCAN_BY_PREFIX marketing z",
-    "DELETE engineering adam",
-    "SCAN engineering",
-    "SCAN sales"
-])
-assert r == ["", "", "", "", "", "adam(devops), alice(backend), bob(frontend)", "adam(devops), alice(backend)", "carlos(manager), carol(analyst)", "", "true", "alice(backend), bob(frontend)", ""], f"Full mixed flow failed: {r}"
-
-# Single employee SCAN
-r = solution(["SET hr zara recruiter", "SCAN hr"])
-assert r == ["", "zara(recruiter)"], f"Single employee SCAN failed: {r}"
-
-# SCAN_BY_PREFIX exact name match
-r = solution(["SET engineering alice backend", "SET engineering bob frontend", "SCAN_BY_PREFIX engineering alice"])
-assert r == ["", "", "alice(backend)"], f"Exact prefix match failed: {r}"`,
-      hint: `SCAN:\n  dept = parts[1]\n  if dept not in data or len(data[dept]) == 0:\n      result.append("")\n  else:\n      pairs = sorted(data[dept].items())  # sorts by key (name)\n      formatted = ", ".join(f"{name}({role})" for name, role in pairs)\n      result.append(formatted)\n\nSCAN_BY_PREFIX:\n  dept, prefix = parts[1], parts[2]\n  if dept not in data:\n      result.append("")\n  else:\n      pairs = sorted((n, r) for n, r in data[dept].items() if n.startswith(prefix))\n      if not pairs:\n          result.append("")\n      else:\n          result.append(", ".join(f"{n}({r})" for n, r in pairs))`
+      title: "SIM L2: Warehouse — + Queries",
+      pattern: "Progressive Level 2: filtering, sorting, prefix, sentinel max (backward compat required)",
+      desc: `<strong>⏱️ PROGRESSIVE SIM — LEVEL 2 of 4</strong><br><br>Your Level 1 code is provided as starter. Add three new methods <strong>without breaking any Level 1 behavior</strong>. All Level 1 tests still run.<br><br>This is the refactoring test — can you extend without rewriting?`,
+      spec: `<div class="method">add_product / get_product / remove_product / update_price — same as L1</div>
+<hr>
+<div class="method">list_by_category(category) → sorted list of product_ids in that category. [] if none.</div>
+<div class="method">search_prefix(prefix) → sorted list of product_ids whose id starts with prefix. [] if none.</div>
+<div class="method">most_expensive(category) → product_id with highest price in category, or None. Ties: alphabetically first.</div>`,
+      starter: `class Warehouse:\n    def __init__(self):\n        self.data = {}\n\n    def add_product(self, product_id, category, price):\n        self.data[product_id] = {"category": category, "price": price}\n        return product_id\n\n    def get_product(self, product_id):\n        if product_id not in self.data:\n            return None\n        return self.data[product_id]\n\n    def remove_product(self, product_id):\n        if product_id not in self.data:\n            return False\n        del self.data[product_id]\n        return True\n\n    def update_price(self, product_id, new_price):\n        if product_id not in self.data:\n            return None\n        self.data[product_id]["price"] = new_price\n        return new_price\n\n    # === LEVEL 2: Implement these ===\n\n    def list_by_category(self, category):\n        pass\n\n    def search_prefix(self, prefix):\n        pass\n\n    def most_expensive(self, category):\n        pass`,
+      tests: `# --- L1 BACKWARD COMPAT ---\nw = Warehouse()\nassert w.add_product("laptop", "electronics", 999) == "laptop"\nassert w.get_product("laptop")["price"] == 999\nassert w.update_price("laptop", 899) == 899\nassert w.remove_product("laptop") == True\nassert w.remove_product("laptop") == False\nassert w.get_product("laptop") is None\nassert w.update_price("missing", 50) is None\n\n# --- L2 TESTS ---\nw2 = Warehouse()\nw2.add_product("laptop", "electronics", 999)\nw2.add_product("phone", "electronics", 699)\nw2.add_product("tablet", "electronics", 499)\nw2.add_product("desk", "furniture", 250)\nw2.add_product("chair", "furniture", 150)\n\n# list_by_category\nassert w2.list_by_category("electronics") == ["laptop", "phone", "tablet"]\nassert w2.list_by_category("clothing") == []\n\n# search_prefix\nassert w2.search_prefix("ph") == ["phone"]\nassert w2.search_prefix("ta") == ["tablet"]\nassert w2.search_prefix("z") == []\nassert w2.search_prefix("d") == ["desk"]\n\n# most_expensive\nassert w2.most_expensive("electronics") == "laptop"\nassert w2.most_expensive("furniture") == "desk"\nassert w2.most_expensive("clothing") is None\n\n# most_expensive tie-breaking\nw2.add_product("monitor", "electronics", 999)\nassert w2.most_expensive("electronics") == "laptop"  # alphabetically before monitor\n\n# after removal\nw2.remove_product("laptop")\nassert w2.most_expensive("electronics") == "monitor"  # now monitor is highest\nassert w2.list_by_category("electronics") == ["monitor", "phone", "tablet"]`,
+      hint: `list_by_category:\n  results = []\n  for pid in self.data:\n      if self.data[pid]["category"] == category:\n          results.append(pid)\n  return sorted(results)\n\nsearch_prefix:\n  return sorted(pid for pid in self.data if pid.startswith(prefix))\n\nmost_expensive — the best_offer pattern:\n  best_id = None\n  best_price = None\n  for pid in self.data:\n      if self.data[pid]["category"] == category:\n          p = self.data[pid]["price"]\n          if best_price is None or p > best_price or (p == best_price and pid < best_id):\n              best_price = p\n              best_id = pid\n  return best_id`
+    },
+    {
+      title: "SIM L3: Warehouse — + Stock Management",
+      pattern: "Progressive Level 3: arithmetic on stored values, conditional operations, threshold filter",
+      desc: `<strong>⏱️ PROGRESSIVE SIM — LEVEL 3 of 4</strong><br><br>Your Level 1+2 code is provided. Now add stock tracking. <strong>Note:</strong> <code>add_product</code> has been modified to also initialize <code>"stock": 0</code>. All Level 1+2 tests still run.<br><br>The tricky part: <code>sell</code> must guard against insufficient stock.`,
+      spec: `<div class="method">All L1+L2 methods — same behavior</div>
+<hr>
+<div class="method">restock(product_id, amount) → new stock level (int), or None if product doesn't exist</div>
+<div class="method">sell(product_id, amount) → new stock level if sufficient stock, None if product doesn't exist or insufficient stock</div>
+<div class="method">low_stock(threshold) → sorted list of product_ids with stock &lt;= threshold</div>
+<br><em>Stock starts at 0 when a product is added.</em>`,
+      starter: `class Warehouse:\n    def __init__(self):\n        self.data = {}\n\n    def add_product(self, product_id, category, price):\n        self.data[product_id] = {"category": category, "price": price, "stock": 0}\n        return product_id\n\n    def get_product(self, product_id):\n        if product_id not in self.data:\n            return None\n        d = self.data[product_id]\n        return {"category": d["category"], "price": d["price"]}\n\n    def remove_product(self, product_id):\n        if product_id not in self.data:\n            return False\n        del self.data[product_id]\n        return True\n\n    def update_price(self, product_id, new_price):\n        if product_id not in self.data:\n            return None\n        self.data[product_id]["price"] = new_price\n        return new_price\n\n    def list_by_category(self, category):\n        return sorted(pid for pid in self.data if self.data[pid]["category"] == category)\n\n    def search_prefix(self, prefix):\n        return sorted(pid for pid in self.data if pid.startswith(prefix))\n\n    def most_expensive(self, category):\n        best_id = None\n        best_price = None\n        for pid in self.data:\n            if self.data[pid]["category"] == category:\n                p = self.data[pid]["price"]\n                if best_price is None or p > best_price or (p == best_price and pid < best_id):\n                    best_price = p\n                    best_id = pid\n        return best_id\n\n    # === LEVEL 3: Implement these ===\n\n    def restock(self, product_id, amount):\n        pass\n\n    def sell(self, product_id, amount):\n        pass\n\n    def low_stock(self, threshold):\n        pass`,
+      tests: `# --- L1 BACKWARD COMPAT ---\nw = Warehouse()\nassert w.add_product("laptop", "electronics", 999) == "laptop"\nassert w.get_product("laptop")["price"] == 999\nassert w.get_product("laptop")["category"] == "electronics"\nassert w.update_price("laptop", 899) == 899\nassert w.remove_product("laptop") == True\nassert w.remove_product("laptop") == False\nassert w.get_product("missing") is None\n\n# --- L2 BACKWARD COMPAT ---\nw2 = Warehouse()\nw2.add_product("laptop", "electronics", 999)\nw2.add_product("phone", "electronics", 699)\nw2.add_product("desk", "furniture", 250)\nassert w2.list_by_category("electronics") == ["laptop", "phone"]\nassert w2.search_prefix("l") == ["laptop"]\nassert w2.most_expensive("electronics") == "laptop"\nassert w2.most_expensive("clothing") is None\n\n# --- L3 TESTS ---\nw3 = Warehouse()\nw3.add_product("laptop", "electronics", 999)\nw3.add_product("phone", "electronics", 699)\nw3.add_product("desk", "furniture", 250)\n\n# Restock\nassert w3.restock("laptop", 50) == 50\nassert w3.restock("laptop", 25) == 75\nassert w3.restock("missing", 10) is None\n\n# Sell — success\nassert w3.sell("laptop", 30) == 45\n\n# Sell — insufficient\nassert w3.sell("laptop", 100) is None\n\n# Sell — product doesn't exist\nassert w3.sell("missing", 1) is None\n\n# Sell — exact amount\nassert w3.sell("laptop", 45) == 0\n\n# Low stock\nw3.restock("phone", 3)\nw3.restock("desk", 100)\nassert w3.low_stock(5) == ["laptop", "phone"]\nassert w3.low_stock(0) == ["laptop"]\nassert w3.low_stock(200) == ["desk", "laptop", "phone"]\n\n# Low stock after sell\nw3.sell("desk", 99)\nassert w3.low_stock(5) == ["desk", "laptop", "phone"]`,
+      hint: `restock:\n  if product_id not in self.data: return None\n  self.data[product_id]["stock"] += amount\n  return self.data[product_id]["stock"]\n\nsell:\n  if product_id not in self.data: return None\n  if self.data[product_id]["stock"] < amount: return None\n  self.data[product_id]["stock"] -= amount\n  return self.data[product_id]["stock"]\n\nlow_stock:\n  return sorted(pid for pid in self.data if self.data[pid]["stock"] <= threshold)`
+    },
+    {
+      title: "SIM L4: Warehouse — + Price History",
+      pattern: "Progressive Level 4: temporal dimension, history tracking, lookback queries",
+      desc: `<strong>⏱️ PROGRESSIVE SIM — LEVEL 4 of 4</strong><br><br>Your L1+L2+L3 code is provided. Now add price history tracking. <code>update_price</code> gains an optional <code>timestamp</code> parameter. The initial price from <code>add_product</code> is recorded at timestamp 0.<br><br>This is the Level 4 pattern candidates report running out of time on: <strong>adding a temporal dimension to an existing system</strong>.`,
+      spec: `<div class="method">All L1+L2+L3 methods — same behavior</div>
+<hr>
+<div class="method">update_price(product_id, new_price, timestamp=0) — now records timestamp with each price change</div>
+<div class="method">price_history(product_id) → list of (timestamp, price) tuples in chronological order, or None if product doesn't exist</div>
+<div class="method">price_at(product_id, timestamp) → the price in effect at that timestamp, or None. "In effect" = most recent update at or before that timestamp.</div>
+<br><em>The initial price from add_product is recorded at timestamp 0.</em>`,
+      starter: `class Warehouse:\n    def __init__(self):\n        self.data = {}\n\n    def add_product(self, product_id, category, price):\n        self.data[product_id] = {\n            "category": category, "price": price,\n            "stock": 0, "history": [(0, price)]\n        }\n        return product_id\n\n    def get_product(self, product_id):\n        if product_id not in self.data:\n            return None\n        d = self.data[product_id]\n        return {"category": d["category"], "price": d["price"]}\n\n    def remove_product(self, product_id):\n        if product_id not in self.data:\n            return False\n        del self.data[product_id]\n        return True\n\n    def update_price(self, product_id, new_price, timestamp=0):\n        if product_id not in self.data:\n            return None\n        self.data[product_id]["price"] = new_price\n        # TODO: also record (timestamp, new_price) in history\n        return new_price\n\n    def list_by_category(self, category):\n        return sorted(pid for pid in self.data if self.data[pid]["category"] == category)\n\n    def search_prefix(self, prefix):\n        return sorted(pid for pid in self.data if pid.startswith(prefix))\n\n    def most_expensive(self, category):\n        best_id = None\n        best_price = None\n        for pid in self.data:\n            if self.data[pid]["category"] == category:\n                p = self.data[pid]["price"]\n                if best_price is None or p > best_price or (p == best_price and pid < best_id):\n                    best_price = p\n                    best_id = pid\n        return best_id\n\n    def restock(self, product_id, amount):\n        if product_id not in self.data:\n            return None\n        self.data[product_id]["stock"] += amount\n        return self.data[product_id]["stock"]\n\n    def sell(self, product_id, amount):\n        if product_id not in self.data:\n            return None\n        if self.data[product_id]["stock"] < amount:\n            return None\n        self.data[product_id]["stock"] -= amount\n        return self.data[product_id]["stock"]\n\n    def low_stock(self, threshold):\n        return sorted(pid for pid in self.data if self.data[pid]["stock"] <= threshold)\n\n    # === LEVEL 4: Implement these ===\n    # (update_price above needs a one-line fix too)\n\n    def price_history(self, product_id):\n        pass\n\n    def price_at(self, product_id, timestamp):\n        pass`,
+      tests: `# --- L1 BACKWARD COMPAT ---\nw = Warehouse()\nassert w.add_product("laptop", "electronics", 999) == "laptop"\nassert w.get_product("laptop")["price"] == 999\nassert w.update_price("laptop", 899) == 899\nassert w.get_product("laptop")["price"] == 899\nassert w.remove_product("laptop") == True\nassert w.get_product("laptop") is None\n\n# --- L2 BACKWARD COMPAT ---\nw2 = Warehouse()\nw2.add_product("laptop", "electronics", 999)\nw2.add_product("phone", "electronics", 699)\nassert w2.list_by_category("electronics") == ["laptop", "phone"]\nassert w2.most_expensive("electronics") == "laptop"\nassert w2.search_prefix("p") == ["phone"]\n\n# --- L3 BACKWARD COMPAT ---\nw3 = Warehouse()\nw3.add_product("laptop", "electronics", 999)\nassert w3.restock("laptop", 50) == 50\nassert w3.sell("laptop", 20) == 30\nassert w3.low_stock(30) == ["laptop"]\n\n# --- L4 TESTS ---\nw4 = Warehouse()\nw4.add_product("laptop", "electronics", 999)\n\n# Initial history\nassert w4.price_history("laptop") == [(0, 999)]\nassert w4.price_history("missing") is None\n\n# Update with timestamps\nw4.update_price("laptop", 899, timestamp=10)\nw4.update_price("laptop", 799, timestamp=20)\nw4.update_price("laptop", 749, timestamp=30)\n\nassert w4.price_history("laptop") == [(0, 999), (10, 899), (20, 799), (30, 749)]\n\n# price_at — exact timestamp\nassert w4.price_at("laptop", 10) == 899\nassert w4.price_at("laptop", 20) == 799\n\n# price_at — between timestamps (most recent before)\nassert w4.price_at("laptop", 15) == 899\nassert w4.price_at("laptop", 25) == 799\nassert w4.price_at("laptop", 50) == 749\n\n# price_at — at initial timestamp\nassert w4.price_at("laptop", 0) == 999\n\n# price_at — before any record\nassert w4.price_at("missing", 10) is None\n\n# price_at — timestamp before product existed (before 0)\n# product was added at timestamp 0, so timestamp -1 has no data\n# this edge case: return None if timestamp < earliest record\n\n# After remove, history is gone\nw4.remove_product("laptop")\nassert w4.price_history("laptop") is None\nassert w4.price_at("laptop", 10) is None`,
+      hint: `Fix update_price — add one line:\n  self.data[product_id]["history"].append((timestamp, new_price))\n\nprice_history:\n  if product_id not in self.data: return None\n  return self.data[product_id]["history"]\n\nprice_at:\n  if product_id not in self.data: return None\n  history = self.data[product_id]["history"]\n  result = None\n  for t, p in history:\n      if t <= timestamp:\n          result = p\n      else:\n          break\n  return result`
     }
   ];
 }
@@ -2209,7 +2130,7 @@ const tracks = [
   { name: "Nesting", icon: "🔍", start: 17, end: 21, desc: "Return types and nesting depth" },
   { name: "Micro µ", icon: "🎯", start: 22, end: 29, desc: "One confusion point each" },
   { name: "Drills", icon: "🔧", start: 30, end: 41, desc: "Fill-line, spot-bug, trace" },
-  { name: "Sim Test", icon: "⏱️", start: 42, end: 43, desc: "Progressive workspace simulation (Anthropic format) — def solution(queries)" }
+  { name: "Sim Test", icon: "⏱️", start: 42, end: 45, desc: "4-level progressive simulation (Anthropic format) — Warehouse system" }
 ];
 
 function renderProgressDashboard() {
